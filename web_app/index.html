@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIBS 稀土元素检测工作站</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="workstation-shell">
+      <header class="app-toolbar" aria-label="应用工具栏">
+        <div class="app-title">
+          <span class="system-id">光溯稀土</span>
+          <strong>稀土元素检测工作站</strong>
+        </div>
+        <div class="toolbar-actions">
+          <input id="spectrum-file" class="hidden-file" type="file" accept=".asc,.csv,.txt,.tsv" multiple>
+          <input id="spectrum-folder" class="hidden-file" type="file" webkitdirectory directory mozdirectory multiple>
+          <button class="tool-button" type="button" data-action="import">打开光谱</button>
+          <button class="tool-button" type="button" data-action="import-folder">打开文件夹</button>
+          <button class="tool-button primary" type="button" data-action="start">开始</button>
+          <button class="tool-button" type="button" data-action="reset">停止/复位</button>
+          <div class="export-menu" data-export-menu>
+            <button class="tool-button export-toggle" type="button" data-action="export-menu-toggle" aria-haspopup="menu" aria-expanded="false" disabled>导出</button>
+            <div class="export-menu-list" role="menu" aria-label="导出格式" hidden>
+              <button class="export-menu-item" type="button" role="menuitem" data-action="output" disabled>CSV</button>
+              <button class="export-menu-item" type="button" role="menuitem" data-action="export-json" disabled>JSON</button>
+              <button class="export-menu-item" type="button" role="menuitem" data-action="export-summary" disabled>摘要</button>
+              <button class="export-menu-item" type="button" role="menuitem" data-action="export-report" disabled>HTML报告</button>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar-state" data-state="ready">
+          <span class="state-dot"></span>
+          <span id="run-state">就绪</span>
+        </div>
+      </header>
+
+      <section class="workbench" aria-label="检测工作区">
+        <aside class="workflow-tree" aria-label="项目和流程">
+          <section class="tree-section source-mode-section" aria-label="来源模式">
+            <h2>来源模式</h2>
+            <div class="source-mode-switch" role="tablist" aria-label="选择分析来源">
+              <button class="source-mode-button is-active" type="button" data-source-mode="offline" aria-pressed="true" aria-controls="offline-source-panel">离线分析</button>
+              <button class="source-mode-button" type="button" data-source-mode="realtime" aria-pressed="false" aria-controls="realtime-source-panel">实时采集</button>
+            </div>
+            <p class="source-mode-hint" id="source-mode-hint">离线分析使用本地光谱文件、文件夹或显式示例样本库运行后端检测。</p>
+          </section>
+
+          <section class="tree-section source-panel offline-source-panel" id="offline-source-panel" data-source-panel="offline">
+            <h2>离线来源</h2>
+            <dl class="sample-meta">
+              <div>
+                <dt>当前</dt>
+                <dd id="sample-name">未导入文件</dd>
+              </div>
+              <div>
+                <dt>已导入</dt>
+                <dd>
+                  <select id="sample-select" aria-label="选择已导入文件">
+                    <option value="" disabled selected>未导入文件</option>
+                  </select>
+                </dd>
+              </div>
+              <div class="sample-library-actions">
+                <dt>示例</dt>
+                <dd>
+                  <button class="sample-library-button" type="button" data-action="load-samples">加载示例样本库</button>
+                </dd>
+              </div>
+              <div class="sample-library-row" id="sample-library-row" hidden>
+                <dt>样本库</dt>
+                <dd>
+                  <select id="sample-library-select" aria-label="选择示例样本库">
+                    <option value="" disabled selected>未加载示例样本库</option>
+                  </select>
+                </dd>
+              </div>
+              <div>
+                <dt>文件</dt>
+                <dd id="file-status">请先打开光谱或文件夹</dd>
+              </div>
+              <div>
+                <dt>范围</dt>
+                <dd>200-900 nm</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="tree-section source-panel realtime-source-panel" id="realtime-source-panel" data-source-panel="realtime" hidden>
+            <div class="realtime-title-row">
+              <h2>实时采集</h2>
+            </div>
+
+            <section class="realtime-block" aria-labelledby="serial-recognition-title">
+              <div class="realtime-block-header">
+                <h3 id="serial-recognition-title">采集板串口</h3>
+                <button class="realtime-confirm-button" type="button" data-action="confirm-realtime-params">确认</button>
+              </div>
+              <label class="realtime-field">
+                <span>串口</span>
+                <select id="serial-port-select" aria-label="采集板端口状态" disabled>
+                  <option value="">未检测到采集板端口</option>
+                </select>
+              </label>
+              <div class="realtime-ip-grid" aria-label="光谱仪 IP 设置">
+                <label class="realtime-field">
+                  <span>光谱仪 IP</span>
+                  <input id="spectrometer-ip-input" type="text" value="192.168.0.10" inputmode="numeric" aria-label="光谱仪 IP 设置">
+                </label>
+                <label class="realtime-field">
+                  <span>端口</span>
+                  <input id="spectrometer-port-input" type="text" value="5000" inputmode="numeric" aria-label="光谱仪端口设置">
+                </label>
+              </div>
+              <p class="realtime-config-status" id="realtime-config-status">参数未确认</p>
+            </section>
+          </section>
+
+          <section class="tree-section">
+            <h2>处理流程</h2>
+            <ol class="stage-list">
+              <li class="stage-item" data-stage-index="0" data-state="active">
+                <span class="stage-index">01</span>
+                <span class="stage-name">原始光谱</span>
+                <span class="stage-detail">波长-强度输入</span>
+                <span class="stage-mark">就绪</span>
+              </li>
+              <li class="stage-item" data-stage-index="1" data-state="waiting">
+                <span class="stage-index">02</span>
+                <span class="stage-name">寻峰结果</span>
+                <span class="stage-detail">CWT 脊线寻峰</span>
+                <span class="stage-mark">等待</span>
+              </li>
+              <li class="stage-item" data-stage-index="2" data-state="waiting">
+                <span class="stage-index">03</span>
+                <span class="stage-name">谱线匹配</span>
+                <span class="stage-detail">理论线与实验峰</span>
+                <span class="stage-mark">等待</span>
+              </li>
+              <li class="stage-item" data-stage-index="3" data-state="waiting">
+                <span class="stage-index">04</span>
+                <span class="stage-name">温度迭代</span>
+                <span class="stage-detail">候选元素收敛</span>
+                <span class="stage-mark">等待</span>
+              </li>
+              <li class="stage-item" data-stage-index="4" data-state="waiting">
+                <span class="stage-index">05</span>
+                <span class="stage-name">多峰拟合</span>
+                <span class="stage-detail">重叠峰分解</span>
+                <span class="stage-mark">等待</span>
+              </li>
+              <li class="stage-item" data-stage-index="5" data-state="waiting">
+                <span class="stage-index">06</span>
+                <span class="stage-name">置信度计算</span>
+                <span class="stage-detail">强度梳分解</span>
+                <span class="stage-mark">等待</span>
+              </li>
+              <li class="stage-item" data-stage-index="6" data-state="waiting">
+                <span class="stage-index">07</span>
+                <span class="stage-name">检测结果</span>
+                <span class="stage-detail">稀土置信度</span>
+                <span class="stage-mark">等待</span>
+              </li>
+            </ol>
+          </section>
+
+          <section class="tree-section">
+            <h2>检测配置</h2>
+            <label class="config-field">
+              <span>拟合目标</span>
+              <select id="fit-target-select" aria-label="选择多峰拟合目标">
+                <option value="">自动</option>
+              </select>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" checked>
+              <span>温度迭代</span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" checked>
+              <span>基体重叠提示</span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" checked>
+              <span>多峰补救</span>
+            </label>
+          </section>
+        </aside>
+
+        <section class="main-view" aria-label="当前阶段主视图">
+          <header class="stage-toolbar">
+            <div class="view-header">
+              <p class="view-kicker">CURRENT VIEW</p>
+              <h1 id="active-stage-title">原始光谱</h1>
+            </div>
+            <div class="step-strip" aria-label="阶段快速导航">
+              <button class="step-cell" type="button" data-stage-index="0" data-state="active">原始光谱</button>
+              <button class="step-cell" type="button" data-stage-index="1" data-state="waiting">寻峰结果</button>
+              <button class="step-cell" type="button" data-stage-index="2" data-state="waiting">谱线匹配</button>
+              <button class="step-cell" type="button" data-stage-index="3" data-state="waiting">温度迭代</button>
+              <button class="step-cell" type="button" data-stage-index="4" data-state="waiting">多峰拟合</button>
+              <button class="step-cell" type="button" data-stage-index="5" data-state="waiting">置信度计算</button>
+              <button class="step-cell" type="button" data-stage-index="6" data-state="waiting">检测结果</button>
+            </div>
+            <div class="view-progress">
+              <span id="stage-counter">1 / 7</span>
+              <div class="progress-track" aria-hidden="true">
+                <span id="global-progress"></span>
+              </div>
+            </div>
+          </header>
+
+          <section class="plot-panel">
+            <div class="plot-title-row">
+              <span id="plot-title">波长-强度输入数据</span>
+              <details class="chart-tools-drawer" id="chart-tools-drawer" open hidden>
+                <summary>图表工具</summary>
+                <div class="chart-zoom-toolbar" id="chart-zoom-toolbar" aria-label="光谱缩放控制" hidden>
+                  <div class="chart-zoom-controls" id="chart-zoom-controls" aria-label="横轴局部缩放">
+                    <button class="chart-zoom-button" type="button" data-chart-zoom-out aria-label="缩小局部窗口">−</button>
+                    <label class="chart-zoom-range">
+                      <span>窗口</span>
+                      <input id="chart-zoom-width" type="range" min="4" max="180" step="1" value="37" aria-label="局部窗口宽度">
+                      <span id="chart-zoom-width-value">37 nm</span>
+                    </label>
+                    <button class="chart-zoom-button" type="button" data-chart-zoom-in aria-label="放大局部窗口">+</button>
+                    <button class="chart-zoom-reset" type="button" data-chart-zoom-reset>复位</button>
+                  </div>
+                  <div class="chart-zoom-controls" id="confidence-ion-controls" aria-label="置信度计算粒子选择" hidden>
+                    <label class="chart-zoom-range confidence-ion-range">
+                      <span>粒子</span>
+                      <select id="confidence-ion-select" aria-label="选择置信度计算粒子">
+                        <option value="">无 confidence_calculation.items</option>
+                      </select>
+                      <span id="confidence-ion-count">0/0 项</span>
+                    </label>
+                  </div>
+                  <span class="chart-coordinate-readout" id="chart-coordinate-readout">中心 -- nm</span>
+                  <div class="match-evidence-key" aria-label="谱线证据图例" hidden>
+                    <span class="match-evidence-item is-rare" data-match-evidence-status="enabled">
+                      <span class="match-evidence-mark" aria-hidden="true"></span>
+                      <span data-match-evidence-label>稀土匹配</span>
+                    </span>
+                    <span class="match-evidence-item is-overlap" data-match-evidence-status="blocked">
+                      <span class="match-evidence-mark" aria-hidden="true"></span>
+                      <span data-match-evidence-label>基体重叠</span>
+                    </span>
+                    <span class="match-evidence-item is-review" data-match-evidence-status="review">
+                      <span class="match-evidence-mark" aria-hidden="true"></span>
+                      <span data-match-evidence-label>低置信</span>
+                    </span>
+                  </div>
+                </div>
+              </details>
+              <span id="plot-status">等待检测</span>
+            </div>
+            <canvas id="main-canvas" aria-label="当前阶段图谱"></canvas>
+          </section>
+
+          <section class="data-table-panel" aria-label="阶段数据表">
+            <header>
+              <h2>阶段数据</h2>
+              <span id="table-caption">光谱采样与输入状态</span>
+            </header>
+            <table>
+              <thead>
+                <tr>
+                  <th>项目</th>
+                  <th>数值</th>
+                  <th>说明</th>
+                </tr>
+              </thead>
+              <tbody id="stage-data-body">
+                <tr>
+                  <td>状态</td>
+                  <td>就绪</td>
+                  <td>等待开始检测</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+        </section>
+
+        <aside class="inspector-panel" aria-label="参数和结果检查器">
+          <section class="inspector-section">
+            <h2>当前阶段</h2>
+            <dl class="inspector-list">
+              <div>
+                <dt>阶段</dt>
+                <dd id="inspector-stage">原始光谱</dd>
+              </div>
+              <div>
+                <dt>状态</dt>
+                <dd id="inspector-state">就绪</dd>
+              </div>
+              <div>
+                <dt>进度</dt>
+                <dd id="inspector-progress">0%</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="inspector-section">
+            <h2>参数</h2>
+            <dl class="inspector-list" id="parameter-list">
+              <div>
+                <dt>波长范围</dt>
+                <dd>200-900 nm</dd>
+              </div>
+              <div>
+                <dt>输入格式</dt>
+                <dd>CSV/TXT/TSV</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="inspector-section">
+            <h2>结果摘要</h2>
+            <dl class="inspector-list" id="result-list">
+              <div>
+                <dt>结论</dt>
+                <dd>未运行</dd>
+              </div>
+            </dl>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="event-log" aria-label="运行日志">
+        <div class="log-title">事件日志</div>
+        <ol id="event-log-list">
+          <li><time>--:--:--</time><span>系统就绪，等待操作。</span></li>
+        </ol>
+      </footer>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
