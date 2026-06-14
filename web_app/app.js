@@ -4555,6 +4555,31 @@ function normalizeEvidenceLogEntry(entry, fallbackTime = "--:--:--") {
   };
 }
 
+function evidenceExportText(value, fallback = "") {
+  const text = String(value ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text || fallback;
+}
+
+function exportEvidenceChain(logEntries) {
+  const entries = Array.isArray(logEntries) ? logEntries : [];
+  return entries.map((entry) => {
+    const fallbackTime = entry && typeof entry === "object" && entry.time ? entry.time : "--:--:--";
+    const normalized = normalizeEvidenceLogEntry(entry, fallbackTime);
+    return {
+      time: evidenceExportText(normalized.time, "--:--:--"),
+      actor: evidenceExportText(normalized.actor, "工作站"),
+      stageId: evidenceExportText(normalized.stageId),
+      stageTitle: evidenceExportText(normalized.stageTitle || stageTitleFromId(normalized.stageId), "日志"),
+      action: evidenceExportText(normalized.action, "记录"),
+      evidence: evidenceExportText(normalized.evidence, "无"),
+      review: evidenceExportText(normalized.review),
+    };
+  });
+}
+
 function evidenceLogText(entry) {
   const normalized = normalizeEvidenceLogEntry(entry, entry && entry.time ? entry.time : "--:--:--");
   const scope = normalized.stageTitle || normalized.stageId || "日志";
@@ -4818,6 +4843,17 @@ function reportStageRows(payload) {
   return PROCESS_STAGES.map((stage) => [stage.id, stage.title, summaries[stage.id] || "无"]);
 }
 
+function reportEvidenceChainRows(payload) {
+  return exportEvidenceChain(payload.evidenceChain).map((entry) => [
+    entry.time,
+    entry.actor,
+    entry.stageId ? `${entry.stageTitle} (${entry.stageId})` : entry.stageTitle,
+    entry.action,
+    entry.evidence,
+    entry.review || "无",
+  ]);
+}
+
 function reportOptionalImage(chartImageDataUrl) {
   const safeImage =
     typeof chartImageDataUrl === "string" && /^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(chartImageDataUrl)
@@ -4969,6 +5005,11 @@ function buildHtmlReport(payload, options = {}) {
     </section>
 
     ${reportOptionalImage(options.chartImageDataUrl)}
+
+    <section class="report-section">
+      <h2>证据链日志</h2>
+      ${reportTable(["time", "actor", "stage", "action", "evidence", "review"], reportEvidenceChainRows(payload), "无证据链日志")}
+    </section>
 
     <section class="report-section">
       <h2>附录</h2>
@@ -5641,6 +5682,7 @@ function initApp() {
         confidenceRescue: appState.fitConfidenceRescue,
       },
       rareEarthResults: appState.rareEarthResults,
+      evidenceChain: exportEvidenceChain(logs),
     };
   }
 
@@ -7337,6 +7379,37 @@ function runSelfTests() {
   assert(!indexHtml.includes('class="tool-button" type="button" data-action="export-summary"'), "summary should not remain as a standalone toolbar button");
   assert(!indexHtml.includes('class="tool-button report" type="button" data-action="export-report"'), "HTML report should not remain as a standalone toolbar button");
   assert(stylesCss.includes(".export-menu"), "CSS should style the merged export menu");
+  [
+    "stageSummaries: appState.stageSummaries",
+    "spectralMatches: appState.spectralMatches",
+    "confidenceCalculation: appState.confidenceCalculation",
+    "fit: {",
+    "rareEarthResults: appState.rareEarthResults",
+  ].forEach((snippet) => assert(appJs.includes(snippet), `buildExportPayload should keep existing field source: ${snippet}`));
+  assert(appJs.includes("evidenceChain: exportEvidenceChain(logs)"), "buildExportPayload should append evidenceChain from current logs");
+  assert(typeof exportEvidenceChain === "function", "exportEvidenceChain should provide a pure evidence-chain serializer");
+  const serializedEvidenceChain = exportEvidenceChain([
+    {
+      time: "10:00:01",
+      actor: "系统",
+      stageId: "match",
+      action: "完成阶段",
+      evidence: "稀土匹配 1 条",
+      review: "复核基体重叠",
+      text: "<li>DOM HTML should not be exported</li>",
+    },
+    "旧字符串日志兼容 <li>剔除标签</li>",
+  ]);
+  assert(Array.isArray(serializedEvidenceChain), "evidenceChain export should be an array");
+  assert(serializedEvidenceChain.length === 2, "evidenceChain export should keep normalized log entries");
+  assert(
+    Object.keys(serializedEvidenceChain[0]).join("|") === "time|actor|stageId|stageTitle|action|evidence|review",
+    "evidenceChain records should expose stable structured fields only",
+  );
+  assert(serializedEvidenceChain[0].stageTitle === "谱线匹配", "evidenceChain export should derive stageTitle from stageId");
+  assert(serializedEvidenceChain[1].actor === "工作站" && serializedEvidenceChain[1].stageTitle === "日志", "evidenceChain export should normalize legacy string logs");
+  const evidenceChainJson = JSON.stringify(serializedEvidenceChain);
+  assert(!evidenceChainJson.includes("<li") && !evidenceChainJson.includes("</li>"), "evidenceChain export should not contain DOM HTML strings");
   const reportFixture = {
     exportedAt: "2026-06-05T12:00:00.000Z",
     jobId: "job-report-fixture",
@@ -7397,13 +7470,22 @@ function runSelfTests() {
       { name: "Yb", detected: true, confidence: 0.2703, matched: 1, temperature: 15427.11, r2: 0.7655 },
       { name: "Eu", detected: false, confidence: 0.0, matched: 0, temperature: 0, r2: 0 },
     ],
+    evidenceChain: serializedEvidenceChain,
   };
+  assert(reportFixture.stageSummaries, "export payload fixture should keep stageSummaries");
+  assert(reportFixture.spectralMatches, "export payload fixture should keep spectralMatches");
+  assert(reportFixture.confidenceCalculation, "export payload fixture should keep confidenceCalculation");
+  assert(reportFixture.fit, "export payload fixture should keep fit");
+  assert(reportFixture.rareEarthResults, "export payload fixture should keep rareEarthResults");
+  assert(Array.isArray(reportFixture.evidenceChain), "export payload fixture should append evidenceChain");
   const reportHtml = buildHtmlReport(reportFixture, { chartImageDataUrl: "data:image/png;base64,AA==" });
   assert(reportHtml.includes("LIBS 稀土元素检测报告"), "HTML report should include the required title");
   assert(reportHtml.includes("Yb"), "HTML report should include detected elements from the payload fixture");
   assert(PROCESS_STAGES.every((stage) => reportHtml.includes(`>${stage.id}<`) && reportHtml.includes(`${stage.id} summary`)), "HTML report should include all seven stage summaries");
   assert(reportHtml.includes("置信度计算摘要"), "HTML report should include the confidence calculation summary");
   assert(reportHtml.includes("稀土结果表"), "HTML report should include the rare-earth result table");
+  assert(reportHtml.includes("证据链日志"), "HTML report should append the evidence-chain log section");
+  assert(reportHtml.includes("旧字符串日志兼容"), "HTML report should include normalized legacy evidence logs");
   assert(reportHtml.includes("完整 JSON payload"), "HTML report should include the full JSON appendix");
   assert(reportHtml.includes("&quot;filename&quot;"), "HTML report JSON appendix should be escaped");
   assert(reportHtml.includes("fixture-Yb&lt;sample&gt;.csv"), "HTML report should escape dynamic sample names");
