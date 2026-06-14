@@ -18,7 +18,7 @@
           <input id="spectrum-folder" class="hidden-file" type="file" webkitdirectory directory mozdirectory multiple>
           <button class="tool-button" type="button" data-action="import">打开光谱</button>
           <button class="tool-button" type="button" data-action="import-folder">打开文件夹</button>
-          <button class="tool-button primary" type="button" data-action="start">开始</button>
+          <button class="tool-button primary" type="button" data-action="start">开始检测</button>
           <button class="tool-button" type="button" data-action="reset">停止/复位</button>
           <div class="export-menu" data-export-menu>
             <button class="tool-button export-toggle" type="button" data-action="export-menu-toggle" aria-haspopup="menu" aria-expanded="false" disabled>导出</button>
@@ -39,23 +39,23 @@
       <section class="workbench" aria-label="检测工作区">
         <aside class="workflow-tree" aria-label="项目和流程">
           <section class="tree-section source-mode-section" aria-label="来源模式">
-            <h2>来源模式</h2>
+            <h2>操作者确认</h2>
             <div class="source-mode-switch" role="tablist" aria-label="选择分析来源">
               <button class="source-mode-button is-active" type="button" data-source-mode="offline" aria-pressed="true" aria-controls="offline-source-panel">离线分析</button>
               <button class="source-mode-button" type="button" data-source-mode="realtime" aria-pressed="false" aria-controls="realtime-source-panel">实时采集</button>
             </div>
-            <p class="source-mode-hint" id="source-mode-hint">离线分析使用本地光谱文件、文件夹或显式示例样本库运行后端检测。</p>
+            <p class="source-mode-hint" id="source-mode-hint">操作者选择来源并确认参数；系统只在来源就绪后生成光谱证据。</p>
           </section>
 
           <section class="tree-section source-panel offline-source-panel" id="offline-source-panel" data-source-panel="offline">
-            <h2>离线来源</h2>
+            <h2>离线来源确认</h2>
             <dl class="sample-meta">
               <div>
-                <dt>当前</dt>
+                <dt>当前来源</dt>
                 <dd id="sample-name">未导入文件</dd>
               </div>
               <div>
-                <dt>已导入</dt>
+                <dt>导入文件</dt>
                 <dd>
                   <select id="sample-select" aria-label="选择已导入文件">
                     <option value="" disabled selected>未导入文件</option>
@@ -77,11 +77,11 @@
                 </dd>
               </div>
               <div>
-                <dt>文件</dt>
+                <dt>解析状态</dt>
                 <dd id="file-status">请先打开光谱或文件夹</dd>
               </div>
               <div>
-                <dt>范围</dt>
+                <dt>工作范围</dt>
                 <dd>200-900 nm</dd>
               </div>
             </dl>
@@ -89,7 +89,7 @@
 
           <section class="tree-section source-panel realtime-source-panel" id="realtime-source-panel" data-source-panel="realtime" hidden>
             <div class="realtime-title-row">
-              <h2>实时采集</h2>
+              <h2>实时采集确认</h2>
             </div>
 
             <section class="realtime-block" aria-labelledby="serial-recognition-title">
@@ -113,62 +113,62 @@
                   <input id="spectrometer-port-input" type="text" value="5000" inputmode="numeric" aria-label="光谱仪端口设置">
                 </label>
               </div>
-              <p class="realtime-config-status" id="realtime-config-status">参数未确认</p>
+              <p class="realtime-config-status" id="realtime-config-status">操作者未确认参数</p>
             </section>
           </section>
 
           <section class="tree-section">
-            <h2>处理流程</h2>
+            <h2>系统证据流程</h2>
             <ol class="stage-list">
               <li class="stage-item" data-stage-index="0" data-state="active">
                 <span class="stage-index">01</span>
                 <span class="stage-name">原始光谱</span>
-                <span class="stage-detail">波长-强度输入</span>
+                <span class="stage-detail">系统解析输入</span>
                 <span class="stage-mark">就绪</span>
               </li>
               <li class="stage-item" data-stage-index="1" data-state="waiting">
                 <span class="stage-index">02</span>
                 <span class="stage-name">寻峰结果</span>
-                <span class="stage-detail">CWT 脊线寻峰</span>
+                <span class="stage-detail">算法寻峰候选</span>
                 <span class="stage-mark">等待</span>
               </li>
               <li class="stage-item" data-stage-index="2" data-state="waiting">
                 <span class="stage-index">03</span>
                 <span class="stage-name">谱线匹配</span>
-                <span class="stage-detail">理论线与实验峰</span>
+                <span class="stage-detail">算法匹配证据</span>
                 <span class="stage-mark">等待</span>
               </li>
               <li class="stage-item" data-stage-index="3" data-state="waiting">
                 <span class="stage-index">04</span>
                 <span class="stage-name">温度迭代</span>
-                <span class="stage-detail">候选元素收敛</span>
+                <span class="stage-detail">算法迭代收敛</span>
                 <span class="stage-mark">等待</span>
               </li>
               <li class="stage-item" data-stage-index="4" data-state="waiting">
                 <span class="stage-index">05</span>
                 <span class="stage-name">多峰拟合</span>
-                <span class="stage-detail">重叠峰分解</span>
+                <span class="stage-detail">算法分解重叠峰</span>
                 <span class="stage-mark">等待</span>
               </li>
               <li class="stage-item" data-stage-index="5" data-state="waiting">
                 <span class="stage-index">06</span>
                 <span class="stage-name">置信度计算</span>
-                <span class="stage-detail">强度梳分解</span>
+                <span class="stage-detail">系统计算置信度</span>
                 <span class="stage-mark">等待</span>
               </li>
               <li class="stage-item" data-stage-index="6" data-state="waiting">
                 <span class="stage-index">07</span>
                 <span class="stage-name">检测结果</span>
-                <span class="stage-detail">稀土置信度</span>
+                <span class="stage-detail">候选结论待复核</span>
                 <span class="stage-mark">等待</span>
               </li>
             </ol>
           </section>
 
           <section class="tree-section">
-            <h2>检测配置</h2>
+            <h2>操作者参数</h2>
             <label class="config-field">
-              <span>拟合目标</span>
+              <span>拟合目标确认</span>
               <select id="fit-target-select" aria-label="选择多峰拟合目标">
                 <option value="">自动</option>
               </select>
@@ -179,11 +179,11 @@
             </label>
             <label class="check-row">
               <input type="checkbox" checked>
-              <span>基体重叠提示</span>
+              <span>低置信/重叠复核</span>
             </label>
             <label class="check-row">
               <input type="checkbox" checked>
-              <span>多峰补救</span>
+              <span>多峰补救证据</span>
             </label>
           </section>
         </aside>
@@ -191,7 +191,7 @@
         <section class="main-view" aria-label="当前阶段主视图">
           <header class="stage-toolbar">
             <div class="view-header">
-              <p class="view-kicker">CURRENT VIEW</p>
+              <p class="view-kicker">系统证据</p>
               <h1 id="active-stage-title">原始光谱</h1>
             </div>
             <div class="step-strip" aria-label="阶段快速导航">
@@ -213,7 +213,7 @@
 
           <section class="plot-panel">
             <div class="plot-title-row">
-              <span id="plot-title">波长-强度输入数据</span>
+              <span id="plot-title">系统解析波长-强度输入</span>
               <details class="chart-tools-drawer" id="chart-tools-drawer" open hidden>
                 <summary>图表工具</summary>
                 <div class="chart-zoom-toolbar" id="chart-zoom-toolbar" aria-label="光谱缩放控制" hidden>
@@ -253,15 +253,15 @@
                   </div>
                 </div>
               </details>
-              <span id="plot-status">等待检测</span>
+              <span id="plot-status">等待操作者确认</span>
             </div>
             <canvas id="main-canvas" aria-label="当前阶段图谱"></canvas>
           </section>
 
           <section class="data-table-panel" aria-label="阶段数据表">
             <header>
-              <h2>阶段数据</h2>
-              <span id="table-caption">光谱采样与输入状态</span>
+              <h2>阶段证据</h2>
+              <span id="table-caption">来源确认与光谱解析状态</span>
             </header>
             <table>
               <thead>
@@ -275,16 +275,16 @@
                 <tr>
                   <td>状态</td>
                   <td>就绪</td>
-                  <td>等待开始检测</td>
+                  <td>等待操作者确认来源并开始检测</td>
                 </tr>
               </tbody>
             </table>
           </section>
         </section>
 
-        <aside class="inspector-panel" aria-label="参数和结果检查器">
+        <aside class="inspector-panel" aria-label="参数和证据检查器">
           <section class="inspector-section">
-            <h2>当前阶段</h2>
+            <h2>当前证据</h2>
             <dl class="inspector-list">
               <div>
                 <dt>阶段</dt>
@@ -302,7 +302,7 @@
           </section>
 
           <section class="inspector-section">
-            <h2>参数</h2>
+            <h2>参数确认</h2>
             <dl class="inspector-list" id="parameter-list">
               <div>
                 <dt>波长范围</dt>
@@ -316,10 +316,10 @@
           </section>
 
           <section class="inspector-section">
-            <h2>结果摘要</h2>
+            <h2>复核摘要</h2>
             <dl class="inspector-list" id="result-list">
               <div>
-                <dt>结论</dt>
+                <dt>候选结论</dt>
                 <dd>未运行</dd>
               </div>
             </dl>
@@ -328,9 +328,9 @@
       </section>
 
       <footer class="event-log" aria-label="运行日志">
-        <div class="log-title">事件日志</div>
+        <div class="log-title">证据日志</div>
         <ol id="event-log-list">
-          <li><time>--:--:--</time><span>系统就绪，等待操作。</span></li>
+          <li><time>--:--:--</time><span>工作站就绪，等待操作者确认来源与参数。</span></li>
         </ol>
       </footer>
     </main>

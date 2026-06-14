@@ -3,47 +3,47 @@ const PROCESS_STAGES = [
     id: "raw",
     title: "原始光谱",
     shortLabel: "原始光谱",
-    detail: "波长-强度输入数据",
+    detail: "系统解析波长-强度输入",
     duration: 900,
-    tableCaption: "光谱采样与输入状态",
+    tableCaption: "来源确认与光谱解析状态",
   },
   {
     id: "peak",
     title: "寻峰结果",
     shortLabel: "寻峰结果",
-    detail: "CWT 脊线寻峰与峰位校正",
+    detail: "算法寻峰与峰位校正",
     duration: 1200,
-    tableCaption: "候选峰列表",
+    tableCaption: "算法寻峰候选列表",
   },
   {
     id: "match",
     title: "谱线匹配",
     shortLabel: "谱线匹配",
-    detail: "理论谱线与实验峰匹配",
+    detail: "算法匹配理论线与实验峰",
     duration: 1300,
-    tableCaption: "稀土匹配与基体重叠证据",
+    tableCaption: "谱线匹配、低置信与重叠证据",
   },
   {
     id: "temperature",
     title: "温度迭代",
     shortLabel: "温度迭代",
-    detail: "电子温度与候选元素收敛",
+    detail: "算法迭代电子温度",
     duration: 1100,
-    tableCaption: "温度迭代轨迹",
+    tableCaption: "温度迭代证据",
   },
   {
     id: "fit",
     title: "多峰拟合",
     shortLabel: "多峰拟合",
-    detail: "重叠峰 Gaussian 分解",
+    detail: "算法分解重叠峰",
     duration: 1500,
-    tableCaption: "拟合分量参数",
+    tableCaption: "多峰拟合证据",
   },
   {
     id: "confidence",
     title: "置信度计算",
     shortLabel: "置信度计算",
-    detail: "强度梳与置信度分解",
+    detail: "系统计算置信度证据",
     duration: 1000,
     tableCaption: "强度梳与置信度计算明细",
   },
@@ -51,9 +51,9 @@ const PROCESS_STAGES = [
     id: "result",
     title: "检测结果",
     shortLabel: "检测结果",
-    detail: "稀土元素检出结论",
+    detail: "候选结论与待复核证据",
     duration: 900,
-    tableCaption: "稀土元素置信度",
+    tableCaption: "候选结论与导出前复核",
   },
 ];
 
@@ -86,17 +86,17 @@ const SOURCE_MODE_LABELS = {
   realtime: "实时采集",
 };
 const SOURCE_MODE_HINTS = {
-  offline: "离线分析使用本地光谱文件、文件夹或显式示例样本库运行后端检测。",
-  realtime: "实时采集用于确认采集板和光谱仪参数；未获得光谱数据前不能开始分析。",
+  offline: "操作者选择本地光谱或示例样本库；系统解析后进入同一检测流程。",
+  realtime: "操作者确认采集板与光谱仪参数；采集到光谱后再交给算法流程。",
 };
 const SERIAL_UI_STATES = {
   serial_unavailable: {
     label: "不支持串口识别",
-    message: "当前来源不支持；后续需要 HTTPS/localhost 或本地 bridge。",
+    message: "当前环境不能识别采集板端口；请检查 HTTPS/localhost 或本地 bridge。",
   },
   serial_permission_needed: {
     label: "参数未确认",
-    message: "请确认采集板端口、光谱仪 IP 和端口参数。",
+    message: "请由操作者确认采集板端口、光谱仪 IP 和端口参数。",
   },
   serial_port_detected: {
     label: "参数已确认",
@@ -104,11 +104,11 @@ const SERIAL_UI_STATES = {
   },
   serial_port_disconnected: {
     label: "串口已断开",
-    message: "未来展示插拔状态；当前不监听串口事件。",
+    message: "采集板端口状态需复核；当前不监听串口事件。",
   },
   not_wired: {
     label: "待接入",
-    message: "尚未接入采集板通信协议。",
+    message: "采集板通信协议待接入，暂不能产生实时光谱。",
   },
 };
 const TEMPERATURE_COLOR_STOPS = [
@@ -1248,15 +1248,15 @@ function stageSummary(stageId, appState) {
     .join(", ");
 
   return {
-    raw: `${appState.importedName} 已载入`,
-    peak: `检测到 ${peakCount} 个候选峰`,
-    match: `基体 ${highMatrix || "无"}，稀土匹配 ${enabledCount} 条，基体重叠 ${blockedCount} 条`,
-    temperature: `起点 #${selectedTemperatureStart ? selectedTemperatureStart.startIndex + 1 : 1} 收敛 ${appState.targetTemperature.toFixed(0)} K，评分 ${normalizeNumber(appState.temperatureBestScore).toFixed(3)}`,
-    fit: `拟合后置信度 ${appState.fitAfterConfidence.toFixed(2)}`,
+    raw: `系统已解析 ${appState.importedName}`,
+    peak: `算法检测到 ${peakCount} 个候选峰`,
+    match: `算法证据: 基体 ${highMatrix || "无"}，稀土匹配 ${enabledCount} 条，重叠待复核 ${blockedCount} 条`,
+    temperature: `算法从起点 #${selectedTemperatureStart ? selectedTemperatureStart.startIndex + 1 : 1} 收敛 ${appState.targetTemperature.toFixed(0)} K，评分 ${normalizeNumber(appState.temperatureBestScore).toFixed(3)}`,
+    fit: `算法拟合后置信度 ${appState.fitAfterConfidence.toFixed(2)}`,
     confidence: confidenceItem
-      ? `${confidenceItem.ion} confidence ${confidenceItem.confidence.toFixed(4)}，matched ${confidenceItem.matchedTheoreticalComb.length}/${confidenceItem.allTheoreticalComb.length}`
+      ? `系统证据 ${confidenceItem.ion} 置信度 ${confidenceItem.confidence.toFixed(4)}，匹配 ${confidenceItem.matchedTheoreticalComb.length}/${confidenceItem.allTheoreticalComb.length}`
       : "无置信度计算 payload",
-    result: `检出: ${detected || "无"}`,
+    result: `候选结论: ${detected || "无"}，待复核后导出`,
   }[stageId];
 }
 
@@ -2994,13 +2994,14 @@ function drawConfidenceCalculation(canvas, appState) {
     drawConfidenceEmptyState(canvas);
     return;
   }
+  const summary = confidenceTrustSummary(item, appState.confidenceCalculation);
   const { ctx, width, height } = getCanvasMetrics(canvas);
   clearCanvas(ctx, width, height);
   const compact = width < 620;
   const pad = {
     left: compact ? 52 : 62,
     right: compact ? 18 : 28,
-    top: compact ? 92 : 88,
+    top: compact ? 116 : 110,
     bottom: compact ? 42 : 48,
   };
   const gap = compact ? 42 : 58;
@@ -3030,10 +3031,19 @@ function drawConfidenceCalculation(canvas, appState) {
   ctx.font = compact ? "700 12px system-ui, sans-serif" : "700 14px system-ui, sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
-  ctx.fillText(`${item.ion} / ${item.element || "未知元素"} · confidence ${item.confidence.toFixed(4)}`, pad.left, 8);
+  ctx.fillText(`${summary.ion} / ${summary.element} · 原始置信度 ${summary.confidenceText} · ${summary.band}`, pad.left, 8);
   ctx.fillStyle = "#5f6a75";
   ctx.font = compact ? "10px system-ui, sans-serif" : "11px system-ui, sans-serif";
-  ctx.fillText(`distance ${item.distance.toFixed(4)} · T ${item.temperature.toFixed(2)} K · R2 ${item.r2.toFixed(4)} · lines ${item.lineCount}`, pad.left, compact ? 25 : 29);
+  ctx.fillText(
+    truncateCanvasText(ctx, `复核点: ${summary.reviewText}`, width - pad.left - pad.right),
+    pad.left,
+    compact ? 26 : 29,
+  );
+  ctx.fillText(
+    truncateCanvasText(ctx, `distance ${summary.distanceText} · ${summary.gateText} · T ${summary.temperatureText} · R2 ${summary.r2Text} · matched/all ${summary.matchedAllText}`, width - pad.left - pad.right),
+    pad.left,
+    compact ? 43 : 49,
+  );
   ctx.restore();
 
   drawConfidenceRawPeakMarks(ctx, appState, item, rawPlot, compact);
@@ -3950,16 +3960,339 @@ function drawFit(canvas, appState) {
   });
 }
 
+const CONFIDENCE_REVIEW_LIMITS = {
+  strong: 0.7,
+  review: 0.3,
+  distance: 0.3,
+  r2: 0.8,
+  matchedLines: 2,
+  matchedRatio: 0.5,
+};
+
+function reviewBandForConfidence(confidence) {
+  const value = normalizeNumber(confidence);
+  if (value >= CONFIDENCE_REVIEW_LIMITS.strong) {
+    return "证据较强";
+  }
+  if (value >= CONFIDENCE_REVIEW_LIMITS.review) {
+    return "待复核";
+  }
+  return "证据不足";
+}
+
+function confidenceTemperatureGate(confidenceCalculation) {
+  const gate = (confidenceCalculation && confidenceCalculation.temperatureGate) || {};
+  const min = finiteNumberOrNull(gate.min_k ?? gate.minK);
+  const max = finiteNumberOrNull(gate.max_k ?? gate.maxK);
+  const hasBounds = min !== null && max !== null && max >= min;
+  return {
+    hasBounds,
+    min,
+    max,
+    label: hasBounds ? `T gate ${min.toFixed(0)}-${max.toFixed(0)} K` : "T gate 未提供明确上下界",
+  };
+}
+
+function confidenceTrustSummary(confidenceItem, confidenceCalculation) {
+  const calculation = confidenceCalculation || { items: [] };
+  const gate = confidenceTemperatureGate(calculation);
+  if (!confidenceItem) {
+    return {
+      ion: "无",
+      element: "未知",
+      confidence: null,
+      confidenceText: "无",
+      band: "证据不足",
+      distance: null,
+      distanceText: "无",
+      temperature: null,
+      temperatureText: "无",
+      r2: null,
+      r2Text: "无",
+      lineCount: 0,
+      lineCountText: "0",
+      matchedCount: 0,
+      allCount: 0,
+      matchedAllText: "0/0",
+      matchedRatio: 0,
+      representativeLabel: "无代表粒子",
+      representativeSelected: false,
+      gateText: gate.label,
+      gateStatus: "T gate 未判断",
+      reviewReasons: ["无 confidence_calculation.items"],
+      reviewText: "无 confidence_calculation.items",
+    };
+  }
+
+  const confidence = normalizeNumber(confidenceItem.confidence);
+  const distance = normalizeNumber(confidenceItem.distance);
+  const temperature = normalizeNumber(confidenceItem.temperature);
+  const r2 = normalizeNumber(confidenceItem.r2);
+  const lineCount = normalizeNumber(confidenceItem.lineCount);
+  const allCount = confidenceItem.allTheoreticalComb.length;
+  const matchedCount = confidenceItem.matchedTheoreticalComb.length;
+  const matchedRatio = allCount > 0 ? matchedCount / allCount : 0;
+  const representativeSelected = Boolean(confidenceItem.representativeSelection && confidenceItem.representativeSelection.selected);
+  const representativeLabel =
+    (confidenceItem.representativeSelection && confidenceItem.representativeSelection.label) || "未参与代表粒子选择";
+  const gateStatus =
+    gate.hasBounds && Number.isFinite(temperature)
+      ? temperature >= gate.min && temperature <= gate.max
+        ? "T gate 内"
+        : "T gate 外"
+      : "T gate 未判断";
+  const reviewReasons = [];
+
+  if (confidence < CONFIDENCE_REVIEW_LIMITS.strong) {
+    reviewReasons.push(confidence < CONFIDENCE_REVIEW_LIMITS.review ? "置信度低" : "置信度待复核");
+  }
+  if (distance >= CONFIDENCE_REVIEW_LIMITS.distance) {
+    reviewReasons.push("distance 偏大");
+  }
+  if (r2 > 0 && r2 < CONFIDENCE_REVIEW_LIMITS.r2) {
+    reviewReasons.push("R2 偏低");
+  }
+  if (gateStatus === "T gate 外") {
+    reviewReasons.push("温度不在 gate 内");
+  }
+  if (matchedCount < CONFIDENCE_REVIEW_LIMITS.matchedLines) {
+    reviewReasons.push("匹配谱线不足");
+  }
+  if (allCount > 0 && matchedRatio < CONFIDENCE_REVIEW_LIMITS.matchedRatio) {
+    reviewReasons.push("matched/all 比例偏低");
+  }
+  if (!representativeSelected) {
+    reviewReasons.push("非代表粒子");
+  }
+
+  const uniqueReasons = Array.from(new Set(reviewReasons));
+  return {
+    ion: confidenceItem.ion,
+    element: confidenceItem.element || "未知",
+    confidence,
+    confidenceText: confidence.toFixed(4),
+    band: reviewBandForConfidence(confidence),
+    distance,
+    distanceText: distance.toFixed(4),
+    temperature,
+    temperatureText: `${temperature.toFixed(2)} K`,
+    r2,
+    r2Text: r2.toFixed(4),
+    lineCount,
+    lineCountText: String(lineCount),
+    matchedCount,
+    allCount,
+    matchedAllText: `${matchedCount}/${allCount}`,
+    matchedRatio,
+    representativeLabel,
+    representativeSelected,
+    gateText: gate.label,
+    gateStatus,
+    reviewReasons: uniqueReasons,
+    reviewText: uniqueReasons.length ? uniqueReasons.join("；") : "未见重点复核项",
+  };
+}
+
+function sortedRareEarthResults(appState) {
+  return (Array.isArray(appState.rareEarthResults) ? appState.rareEarthResults : [])
+    .slice()
+    .sort((left, right) => normalizeNumber(right.confidence) - normalizeNumber(left.confidence));
+}
+
+function detectedRareEarthResults(appState) {
+  return sortedRareEarthResults(appState).filter((row) => row.detected);
+}
+
+function resultDecisionSummary(appState) {
+  const allResults = sortedRareEarthResults(appState);
+  const detected = detectedRareEarthResults(appState);
+  const primary = detected[0] || allResults[0] || null;
+  const primaryConfidence = primary ? normalizeNumber(primary.confidence) : 0;
+  const confidenceItem = selectedConfidenceItem(appState.confidenceCalculation);
+  const blockedCount = appState.spectralMatches.filter((line) => line.status === "blocked").length;
+  const reviewLineCount = appState.spectralMatches.filter((line) => line.status === "review").length;
+  const matchedLineCount = primary ? normalizeNumber(primary.matched) : confidenceItem ? confidenceItem.matchedTheoreticalComb.length : 0;
+  const reasons = [];
+
+  if (!detected.length) {
+    reasons.push("未检出候选元素");
+  }
+  if (primary && primaryConfidence < 0.7) {
+    reasons.push(primaryConfidence < 0.3 ? "低置信" : "置信度待复核");
+  }
+  if (blockedCount > 0) {
+    reasons.push(`基体重叠 ${blockedCount} 条`);
+  }
+  if (reviewLineCount > 0) {
+    reasons.push(`低置信谱线 ${reviewLineCount} 条`);
+  }
+  if (primary && matchedLineCount > 0 && matchedLineCount < 2) {
+    reasons.push("匹配谱线不足");
+  }
+  if (!confidenceItem) {
+    reasons.push("无置信度 payload");
+  }
+  if (appState.fitConfidenceRescue && appState.fitConfidenceRescue.applied !== false) {
+    reasons.push("多峰拟合补救");
+  }
+  if (appState.fitFallbackReason) {
+    reasons.push("拟合后备路径");
+  }
+
+  const uniqueReasons = Array.from(new Set(reasons));
+  const conclusion = detected.length
+    ? detected.map((row) => `${row.name}(${normalizeNumber(row.confidence).toFixed(4)})`).join(", ")
+    : "未检出候选元素";
+  const primaryConfidenceText = primary
+    ? `${primary.name} ${primaryConfidence.toFixed(4)}`
+    : "无结果置信度";
+
+  return {
+    conclusion,
+    band: reviewBandForConfidence(primaryConfidence),
+    primaryConfidence,
+    primaryConfidenceText,
+    reviewNeeded: uniqueReasons.length > 0 || primaryConfidence < 0.7,
+    reviewText: uniqueReasons.length ? uniqueReasons.join("；") : "未见重点复核项",
+    exportConfirmation: "复核来源、参数和异常证据后导出",
+    detected,
+    primary,
+    blockedCount,
+    reviewLineCount,
+    matchedLineCount,
+  };
+}
+
+function stageExplanationRows(stageId, appState) {
+  const peakCount = appState.peaks.length;
+  const enabledCount = appState.spectralMatches.filter((line) => line.status === "enabled").length;
+  const blockedCount = appState.spectralMatches.filter((line) => line.status === "blocked").length;
+  const reviewCount = appState.spectralMatches.filter((line) => line.status === "review").length;
+  const matrixText = (appState.matrixElements && appState.matrixElements.length ? appState.matrixElements : appState.baseCandidates.map((row) => row.element)).join(", ") || "无";
+  const selectedStart = appState.temperatureStarts.find((start) => start.selected) || appState.temperatureStarts[0] || null;
+  const selectedStartText = selectedStart
+    ? `起点 #${selectedStart.startIndex + 1}，${selectedStart.initialTemperature.toFixed(0)} -> ${selectedStart.finalTemperature.toFixed(0)} K`
+    : "无温度起点";
+  const fitComponentCount = appState.fitComponentCurves.length || appState.fitComponents.length;
+  const fitPeakCount = appState.fitFittedPeaks.length || fitComponentCount;
+  const fitFallbackText = appState.fitFallbackReason ? `后备路径: ${appState.fitFallbackReason}` : "未见拟合后备路径";
+  const confidenceItem = selectedConfidenceItem(appState.confidenceCalculation);
+  const confidenceSummary = confidenceTrustSummary(confidenceItem, appState.confidenceCalculation);
+  const resultDecision = resultDecisionSummary(appState);
+  const detectedNames = resultDecision.detected.length ? resultDecision.detected.map((row) => row.name).join(", ") : "无";
+  const pointCount = appState.pointCount || appState.spectrum.length;
+  const sourceText = appState.importedName || "未选择来源";
+  const rawRangeText = "200-900 nm";
+  const fitTarget = appState.fitCandidates && appState.fitCandidates[0]
+    ? `${appState.fitCandidates[0].label} ${appState.fitCandidates[0].center.toFixed(4)} nm`
+    : appState.fitWindow && Number.isFinite(appState.fitWindow.target)
+      ? `${appState.fitWindow.target.toFixed(4)} nm`
+      : "自动";
+
+  return {
+    raw: [
+      ["输入", sourceText, "操作者选择的光谱文件、示例样本或实时采集光谱"],
+      ["系统处理", "解析波长-强度列", "生成预览光谱和采样点统计"],
+      ["输出证据", `${pointCount} 点 / ${appState.fileStatus}`, `工作范围 ${rawRangeText}`],
+      ["复核风险", "文件格式 / 波长范围 / 空数据", "非光谱文本或超出工作范围需复核"],
+    ],
+    peak: [
+      ["输入", `原始光谱 ${pointCount} 点`, sourceText],
+      ["系统处理", appState.peakMethod, "生成候选峰位和强度"],
+      ["输出证据", `${peakCount} 个候选峰`, peakCount ? `首峰 ${appState.peaks[0].x.toFixed(2)} nm` : "无候选峰"],
+      ["复核风险", "噪声 / 基线 / 弱峰 / 峰位偏移", "弱峰漏检或伪峰需人工复核"],
+    ],
+    match: [
+      ["输入", `${peakCount} 个候选峰 / 稀土理论线 / 基体 ${matrixText}`, `容差 ${appState.matchTolerance.toFixed(2)} nm`],
+      ["系统处理", "理论线匹配实验峰", "标记 enabled / blocked / review"],
+      ["输出证据", `稀土匹配 ${enabledCount} / 基体重叠 ${blockedCount} / 低置信 ${reviewCount}`, `基体候选 ${matrixText}`],
+      ["复核风险", "基体重叠 / delta 偏大 / 低置信谱线", "误匹配和重叠证据需复核"],
+    ],
+    temperature: [
+      ["输入", `匹配谱线 ${enabledCount} 条 / 起点 ${appState.temperatureStarts.length} 个`, `候选基体 ${matrixText}`],
+      ["系统处理", "多起点温度迭代", "选择 best start 和 best score"],
+      ["输出证据", `${appState.targetTemperature.toFixed(0)} K / 评分 ${normalizeNumber(appState.temperatureBestScore).toFixed(3)}`, selectedStartText],
+      ["复核风险", "局部最优 / 温度 gate / 起点敏感 / R2 偏低", "收敛质量和候选粒子需复核"],
+    ],
+    fit: [
+      ["输入", `拟合目标 ${fitTarget}`, `窗口 ${appState.fitWindow.left}-${appState.fitWindow.right} nm`],
+      ["系统处理", "Gaussian 多峰分解", "分解稀土线与基体线重叠"],
+      ["输出证据", `分量 ${fitComponentCount} / 拟合峰 ${fitPeakCount} / RMS ${appState.fitWindow.rms.toFixed(3)}`, `局部极值 ${appState.fitLocalExtrema.length}`],
+      ["复核风险", `重叠峰 / 目标选择 / ${fitFallbackText}`, appState.fitConfidenceRescue ? "存在后端置信度补救证据" : "未见后端补救证据"],
+    ],
+    confidence: [
+      ["输入", `${appState.confidenceCalculation.items.length}/${appState.confidenceCalculation.totalCount} 个 confidence items`, `${confidenceSummary.ion} / matched ${confidenceSummary.matchedAllText}`],
+      ["系统处理", "distance / T gate / R2 / matched-all", "生成前端 review band"],
+      ["输出证据", `${confidenceSummary.confidenceText} / ${confidenceSummary.band}`, `复核原因 ${confidenceSummary.reviewText}`],
+      ["复核风险", confidenceSummary.reviewText, "低置信、distance、R2、matched/all 和代表粒子需复核"],
+    ],
+    result: [
+      ["输入", "前序阶段证据 / 稀土结果 / 阈值", `阈值 ${appState.detectionThreshold.toFixed(2)}`],
+      ["系统处理", "汇总候选结论和复核点", "不替代操作者确认"],
+      ["输出证据", resultDecision.conclusion, `证据强弱 ${resultDecision.band}`],
+      ["复核风险", resultDecision.reviewText, resultDecision.exportConfirmation],
+    ],
+  }[stageId] || [
+    ["输入", "无", "未知阶段"],
+    ["系统处理", "无", "未知阶段"],
+    ["输出证据", "无", "未知阶段"],
+    ["复核风险", "无", "未知阶段"],
+  ];
+}
+
 function drawResult(canvas, appState) {
   const { ctx, width, height } = getCanvasMetrics(canvas);
   clearCanvas(ctx, width, height);
-  const pad = { left: 48, right: 24, top: 26, bottom: 36 };
+  const summary = resultDecisionSummary(appState);
+  const compact = width < 620;
+  const pad = { left: compact ? 34 : 48, right: 24, top: compact ? 24 : 28, bottom: 34 };
   const rows = appState.rareEarthResults;
+  const cardX = pad.left;
+  const cardY = pad.top;
+  const cardWidth = width - pad.left - pad.right;
+  const cardHeight = compact ? 124 : 116;
+
+  ctx.fillStyle = "#f7f9fb";
+  ctx.strokeStyle = "#cbd3dc";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.rect(cardX, cardY, cardWidth, cardHeight);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.fillStyle = "#66717d";
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.fillText("候选结论", cardX + 12, cardY + 22);
+  ctx.fillStyle = "#17212b";
+  ctx.font = compact ? "18px system-ui, sans-serif" : "22px system-ui, sans-serif";
+  ctx.fillText(truncateCanvasText(ctx, summary.conclusion, cardWidth - 24), cardX + 12, cardY + (compact ? 48 : 52));
+
+  const bandColor = summary.band === "证据较强" ? "#246b57" : summary.band === "待复核" ? "#875f25" : "#88414b";
+  const bandX = cardX + 12;
+  const bandY = cardY + (compact ? 66 : 72);
+  ctx.fillStyle = bandColor;
+  ctx.font = "13px system-ui, sans-serif";
+  ctx.fillText(`证据强弱: ${summary.band}`, bandX, bandY);
+  ctx.fillStyle = "#4d5965";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(`主置信度 ${summary.primaryConfidenceText}`, bandX, bandY + 22);
+  ctx.fillText(
+    truncateCanvasText(ctx, `复核点: ${summary.reviewText}`, cardWidth - 24),
+    bandX,
+    bandY + 42,
+  );
+
+  const plotTop = Math.min(height - 86, cardY + cardHeight + 34);
+  const plotBottom = height - pad.bottom;
+  const plotHeight = Math.max(54, plotBottom - plotTop);
+  ctx.fillStyle = "#27323e";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText("稀土结果明细", pad.left, plotTop - 12);
   ctx.strokeStyle = "#c2c8cf";
   ctx.beginPath();
-  ctx.moveTo(pad.left, pad.top);
-  ctx.lineTo(pad.left, height - pad.bottom);
-  ctx.lineTo(width - pad.right, height - pad.bottom);
+  ctx.moveTo(pad.left, plotTop);
+  ctx.lineTo(pad.left, plotBottom);
+  ctx.lineTo(width - pad.right, plotBottom);
   ctx.stroke();
 
   const availableWidth = width - pad.left - pad.right;
@@ -3967,9 +4300,9 @@ function drawResult(canvas, appState) {
   const barWidth = Math.max(6, (availableWidth - gap * (rows.length - 1)) / Math.max(1, rows.length));
   const labelFont = barWidth < 14 ? "9px system-ui, sans-serif" : "12px system-ui, sans-serif";
   rows.forEach((row, index) => {
-    const barHeight = row.confidence * (height - pad.top - pad.bottom - 10);
+    const barHeight = normalizeNumber(row.confidence) * Math.max(1, plotHeight - 10);
     const x = pad.left + index * (barWidth + gap);
-    const y = height - pad.bottom - barHeight;
+    const y = plotBottom - barHeight;
     ctx.fillStyle = row.detected ? "#005f8e" : "#c1c8d0";
     ctx.fillRect(x, y, barWidth, barHeight);
     ctx.fillStyle = row.detected ? "#00496d" : "#66717d";
@@ -3977,13 +4310,13 @@ function drawResult(canvas, appState) {
     ctx.textAlign = "center";
     ctx.fillText(row.name, x + barWidth / 2, height - 12);
     if (barWidth >= 10 || row.detected) {
-      ctx.fillText(row.confidence.toFixed(2), x + barWidth / 2, Math.max(pad.top + 12, y - 6));
+      ctx.fillText(normalizeNumber(row.confidence).toFixed(2), x + barWidth / 2, Math.max(plotTop + 12, y - 6));
     }
   });
   ctx.textAlign = "left";
   ctx.fillStyle = "#27323e";
   ctx.font = "12px system-ui, sans-serif";
-  ctx.fillText(`confidence threshold = ${appState.detectionThreshold.toFixed(2)}`, pad.left + 4, pad.top + 14);
+  ctx.fillText(`检测阈值 ${appState.detectionThreshold.toFixed(2)} · 导出前确认`, pad.left + 4, plotTop + 14);
 }
 
 const chartRenderers = {
@@ -3998,14 +4331,14 @@ const chartRenderers = {
 
 function stageRows(stageId, appState) {
   const peakRows = appState.peaks.slice(0, 6).map((peak, index) => [
-    `Peak ${index + 1}`,
+    `候选峰 ${index + 1}`,
     `${peak.x.toFixed(2)} nm`,
-    `强度 ${peak.y.toFixed(3)}`,
+    `算法标记强度 ${peak.y.toFixed(3)}`,
   ]);
   const matchRows = appState.spectralMatches.map((line) => [
     `${line.element} ${line.wl.toFixed(2)} nm`,
     spectralLineStyle(line).label,
-    `${line.reason}${line.deltaNm ? ` / Δ ${line.deltaNm.toFixed(4)} nm` : ""}`,
+    `${line.reason}${line.deltaNm ? ` / Δ ${line.deltaNm.toFixed(4)} nm` : ""} / ${line.status === "enabled" ? "系统证据" : "待复核"}`,
   ]);
   const temperatureRows = appState.temperatureStarts.map((start) => [
     `${start.selected ? "最优 " : ""}起点 ${start.startIndex + 1}`,
@@ -4034,35 +4367,55 @@ function stageRows(stageId, appState) {
   ]);
   const fitRows = fitCandidateRows.length ? [...fitCandidateRows, ...fittedPeakRows, ...extremaRows] : fittedPeakRows.length ? [...fittedPeakRows, ...extremaRows] : componentRows;
   const confidenceItem = selectedConfidenceItem(appState.confidenceCalculation);
-  const confidenceRows = confidenceItem
-    ? [
-        ["选中粒子", `${confidenceItem.ion} / ${confidenceItem.element || "未知"}`, confidenceItem.representativeSelection.label],
-        ["置信度", confidenceItem.confidence.toFixed(4), "exp(-4.5 * distance / R2)"],
-        ["距离 / R2", `${confidenceItem.distance.toFixed(4)} / ${confidenceItem.r2.toFixed(4)}`, "匹配理论梳与实验梳欧氏距离"],
-        ["温度 T", `${confidenceItem.temperature.toFixed(2)} K`, "T gate: 5000-20000 K"],
-        ["谱线数", `${confidenceItem.lineCount}`, `all ${confidenceItem.allTheoreticalComb.length} / matched ${confidenceItem.matchedTheoreticalComb.length}`],
-        ["实验峰", `${confidenceItem.rawPeakMarks.selectedExperimentalPeaks.length}`, "红点筛选峰"],
-      ]
-    : [["空态", "无", "后端未返回 confidence_calculation.items"]];
+  const confidenceSummary = confidenceTrustSummary(confidenceItem, appState.confidenceCalculation);
+  const confidenceRows = [
+    ["粒子 / 元素", `${confidenceSummary.ion} / ${confidenceSummary.element}`, confidenceSummary.representativeSelected ? "代表粒子" : "备选或空态"],
+    ["原始置信度", confidenceSummary.confidenceText, "保持后端 confidence 数值"],
+    ["证据强弱", confidenceSummary.band, "前端 review band，不写回 payload"],
+    ["复核原因", confidenceSummary.reviewText, "前端复核提示"],
+    [
+      "距离 / R2 / 温度",
+      `distance ${confidenceSummary.distanceText} / R2 ${confidenceSummary.r2Text} / T ${confidenceSummary.temperatureText}`,
+      `${confidenceSummary.gateText} / ${confidenceSummary.gateStatus}`,
+    ],
+    ["匹配谱线", confidenceSummary.matchedAllText, `lineCount ${confidenceSummary.lineCountText}`],
+    ["代表选择", confidenceSummary.representativeLabel, confidenceSummary.representativeSelected ? "已选为代表" : "不是代表粒子"],
+    ["公式", "exp(-4.5 * distance / R2)", "系统计算置信度"],
+  ];
+  if (confidenceItem) {
+    confidenceRows.push(
+      ["强度梳", `all ${confidenceSummary.allCount} / matched ${confidenceSummary.matchedCount}`, "理论梳、匹配理论梳、实验梳对比"],
+      ["实验峰", `${confidenceItem.rawPeakMarks.selectedExperimentalPeaks.length}`, "红点筛选峰"],
+    );
+  }
   const resultRows = appState.rareEarthResults.map((row) => [
-    row.name,
+    `稀土明细 ${row.name}`,
     row.confidence.toFixed(4),
     row.detected ? `检出 / ${row.matched || 0} 线` : "未检出",
   ]);
+  const resultDecision = resultDecisionSummary(appState);
 
-  return {
+  const detailRows = {
     raw: [
-      ["采样点", String(appState.pointCount || appState.spectrum.length), "前两列数值"],
-      ["文件状态", appState.fileStatus, appState.importedName],
-      ["波长范围", "200-900 nm", "当前显示范围"],
+      ["采样点", String(appState.pointCount || appState.spectrum.length), "系统解析前两列数值"],
+      ["解析状态", appState.fileStatus, appState.importedName],
+      ["工作范围", "200-900 nm", "当前显示范围"],
     ],
     peak: peakRows,
     match: matchRows,
     temperature: temperatureRows,
     fit: fitRows,
     confidence: confidenceRows,
-    result: resultRows,
-  }[stageId];
+    result: [
+      ["候选结论", resultDecision.conclusion, "系统证据生成的候选结果"],
+      ["证据强弱", resultDecision.band, `主置信度 ${resultDecision.primaryConfidenceText}`],
+      ["复核点", resultDecision.reviewText, resultDecision.reviewNeeded ? "导出前请确认" : "常规复核"],
+      ["导出确认", resultDecision.exportConfirmation, "CSV/JSON/摘要/HTML 报告"],
+      ...resultRows,
+    ],
+  }[stageId] || [];
+
+  return [...stageExplanationRows(stageId, appState), ...detailRows];
 }
 
 function parameterRows(stage, appState) {
@@ -4072,12 +4425,12 @@ function parameterRows(stage, appState) {
   const gate = appState.confidenceCalculation.temperatureGate || {};
   return {
     raw: [
-      ["波长范围", "200-900 nm"],
+      ["工作范围", "200-900 nm"],
       ["输入格式", "CSV/TXT/TSV"],
-      ["样本", appState.importedName],
+      ["操作者来源", appState.importedName],
     ],
     peak: [
-      ["方法", appState.peakMethod],
+      ["算法方法", appState.peakMethod],
       ["尺度", appState.peakMethod.includes("CWT") ? "1-10" : "后备参数"],
       ["候选峰", String(appState.peaks.length)],
     ],
@@ -4097,7 +4450,7 @@ function parameterRows(stage, appState) {
       ["模型", appState.fitModel],
       ["分量数", String(appState.fitComponentCurves.length || appState.fitComponents.length)],
       ["候选数", String((appState.fitCandidates || []).length)],
-      ["目标来源", appState.fitCandidates && appState.fitCandidates[0] ? appState.fitCandidates[0].source : "自动"],
+      ["拟合目标", appState.fitCandidates && appState.fitCandidates[0] ? appState.fitCandidates[0].source : "自动"],
       ["目标窗口", `${appState.fitWindow.left}-${appState.fitWindow.right} nm`],
     ],
     confidence: [
@@ -4109,7 +4462,7 @@ function parameterRows(stage, appState) {
     ],
     result: [
       ["固定顺序", "15 REE"],
-      ["输出", "confidence CSV"],
+      ["系统输出", "confidence CSV"],
       ["阈值", appState.detectionThreshold.toFixed(2)],
     ],
   }[stage.id];
@@ -4121,12 +4474,14 @@ function resultRows(stage, appState) {
   const blockedCount = appState.spectralMatches.filter((line) => line.status === "blocked").length;
   const selectedStart = appState.temperatureStarts.find((start) => start.selected) || appState.temperatureStarts[0] || { startIndex: 0, initialTemperature: 0, bestScore: 0 };
   const confidenceItem = selectedConfidenceItem(appState.confidenceCalculation);
+  const confidenceSummary = confidenceTrustSummary(confidenceItem, appState.confidenceCalculation);
   return {
-    raw: [["状态", appState.fileStatus]],
-    peak: [["候选峰", String(appState.peaks.length)]],
+    raw: [["来源状态", appState.fileStatus]],
+    peak: [["系统候选峰", String(appState.peaks.length)]],
     match: [
       ["高置信基体", highBase || "无"],
       ["匹配/重叠", `${enabledCount}/${blockedCount}`],
+      ["复核点", blockedCount ? "存在基体重叠证据" : "未见基体重叠证据"],
     ],
     temperature: [
       ["最优起点", `#${selectedStart.startIndex + 1} / ${selectedStart.initialTemperature.toFixed(0)} K`],
@@ -4137,20 +4492,107 @@ function resultRows(stage, appState) {
       ["拟合 RMS", appState.fitWindow.rms.toFixed(3)],
       ["补救置信度", `${appState.fitBeforeConfidence.toFixed(2)} -> ${appState.fitAfterConfidence.toFixed(2)}`],
       ["基线/极值", `${appState.fitBaseline === null ? "n/a" : appState.fitBaseline.toFixed(4)} / ${appState.fitLocalExtrema.length}`],
+      ["复核点", "重叠峰与低置信证据"],
     ],
-    confidence: confidenceItem
-      ? [
-          ["代表粒子", confidenceItem.representativeSelection.selected ? "是" : "否"],
-          ["Matched", `${confidenceItem.matchedTheoreticalComb.length}/${confidenceItem.allTheoreticalComb.length}`],
-          ["原因", confidenceItem.representativeSelection.label],
-        ]
-      : [["状态", "无 payload"]],
-    result: [["结论", appState.rareEarthResults.filter((row) => row.detected).map((row) => row.name).join(", ")]],
+    confidence: [
+      ["证据强弱", confidenceSummary.band],
+      ["复核原因", confidenceSummary.reviewText],
+      ["原始置信度", confidenceSummary.confidenceText],
+      ["支撑数值", `distance ${confidenceSummary.distanceText} · ${confidenceSummary.gateText} · T ${confidenceSummary.temperatureText} · R2 ${confidenceSummary.r2Text}`],
+      ["匹配谱线", confidenceSummary.matchedAllText],
+      ["代表选择", confidenceSummary.representativeLabel],
+    ],
+    result: (() => {
+      const decision = resultDecisionSummary(appState);
+      return [
+        ["候选结论", decision.conclusion],
+        ["证据强弱", decision.band],
+        ["复核点", decision.reviewText],
+        ["导出确认", decision.exportConfirmation],
+        ["主置信度", decision.primaryConfidenceText],
+        ["匹配/重叠", `${enabledCount}/${blockedCount}`],
+      ];
+    })(),
   }[stage.id];
 }
 
 function logTime() {
   return new Date().toLocaleTimeString("zh-CN", { hour12: false });
+}
+
+function stageTitleFromId(stageId) {
+  const stage = PROCESS_STAGES.find((item) => item.id === stageId);
+  return stage ? stage.title : "";
+}
+
+function normalizeEvidenceLogEntry(entry, fallbackTime = "--:--:--") {
+  if (typeof entry === "string") {
+    return {
+      time: fallbackTime,
+      actor: "工作站",
+      stageId: "",
+      stageTitle: "日志",
+      action: "记录",
+      evidence: entry,
+      review: "",
+      text: entry,
+    };
+  }
+
+  const source = entry && typeof entry === "object" ? entry : {};
+  const stageId = source.stageId || "";
+  const stageTitle = source.stageTitle || stageTitleFromId(stageId) || "日志";
+  const text = source.text || "";
+  return {
+    time: source.time || fallbackTime,
+    actor: source.actor || "工作站",
+    stageId,
+    stageTitle,
+    action: source.action || "记录",
+    evidence: source.evidence || text || "无",
+    review: source.review || "",
+    text,
+  };
+}
+
+function evidenceLogText(entry) {
+  const normalized = normalizeEvidenceLogEntry(entry, entry && entry.time ? entry.time : "--:--:--");
+  const scope = normalized.stageTitle || normalized.stageId || "日志";
+  const action = `${normalized.actor || ""}${normalized.action || ""}` || normalized.text || "记录";
+  const parts = [`[${scope}] ${action}`];
+  if (normalized.evidence) {
+    parts.push(`证据: ${normalized.evidence}`);
+  }
+  if (normalized.review) {
+    parts.push(`复核: ${normalized.review}`);
+  }
+  return parts.join("；");
+}
+
+function stageExplanationField(stageId, appState, label) {
+  const row = stageExplanationRows(stageId, appState).find((item) => item[0] === label);
+  if (!row) {
+    return "";
+  }
+  return [row[1], row[2]].filter((value) => String(value || "").trim()).join(" / ");
+}
+
+function stageEvidenceLogEntry(stage, appState, action = "完成阶段", fallbackTime = logTime()) {
+  const stageId = typeof stage === "string" ? stage : stage && stage.id;
+  const stageTitle = (stage && stage.title) || stageTitleFromId(stageId) || "阶段";
+  const isStart = String(action).includes("开始");
+  return normalizeEvidenceLogEntry(
+    {
+      time: fallbackTime,
+      actor: "系统",
+      stageId,
+      stageTitle,
+      action,
+      evidence: stageExplanationField(stageId, appState, isStart ? "输入" : "输出证据") || stageSummary(stageId, appState),
+      review: stageExplanationField(stageId, appState, "复核风险") || "常规复核",
+    },
+    fallbackTime,
+  );
 }
 
 function escapeHtml(value) {
@@ -4642,7 +5084,19 @@ function initApp() {
   let realtimePortsError = "";
   let selectedRealtimePort = "";
   let runToken = 0;
-  const logs = [{ time: "--:--:--", text: "系统就绪，等待操作。" }];
+  const logs = [
+    normalizeEvidenceLogEntry(
+      {
+        time: "--:--:--",
+        actor: "工作站",
+        stageTitle: "来源",
+        action: "就绪",
+        evidence: "等待操作者确认来源与参数",
+        review: "来源与参数",
+      },
+      "--:--:--",
+    ),
+  ];
 
   const shell = document.querySelector(".workstation-shell");
   const mainView = document.querySelector(".main-view");
@@ -4712,8 +5166,14 @@ function initApp() {
   const eventLogList = document.querySelector("#event-log-list");
   let isChartPointerActive = false;
 
-  function pushLog(text) {
-    logs.unshift({ time: logTime(), text });
+  function pushLog(entry) {
+    logs.unshift(normalizeEvidenceLogEntry(entry, logTime()));
+    logs.splice(8);
+  }
+
+  function replaceLogs(entryOrEntries) {
+    const entries = Array.isArray(entryOrEntries) ? entryOrEntries : [entryOrEntries];
+    logs.splice(0, logs.length, ...entries.map((entry) => normalizeEvidenceLogEntry(entry, logTime())));
     logs.splice(8);
   }
 
@@ -4731,7 +5191,7 @@ function initApp() {
 
   function renderLogs() {
     eventLogList.innerHTML = logs
-      .map((entry) => `<li><time>${escapeHtml(entry.time)}</time><span>${escapeHtml(entry.text)}</span></li>`)
+      .map((entry) => `<li><time>${escapeHtml(entry.time)}</time><span>${escapeHtml(evidenceLogText(entry))}</span></li>`)
       .join("");
   }
 
@@ -4746,7 +5206,7 @@ function initApp() {
     }
     sampleSelect.value = findImportedFileByKey(importedFiles, selectedImportedKey) ? selectedImportedKey : "";
     sampleSelect.disabled = isRunning || importedFiles.length === 0;
-    sampleSelect.title = importedFiles.length > 0 ? "用户已导入文件" : "请先打开光谱或文件夹";
+    sampleSelect.title = importedFiles.length > 0 ? "操作者已导入文件" : "请先打开光谱或文件夹";
   }
 
   function renderSampleLibrary() {
@@ -4833,7 +5293,7 @@ function initApp() {
 
     realtimeSerialState = "serial_port_detected";
     realtimeParameterSummary = `串口 ${normalized.serialPort || "待接入"}，光谱仪 ${normalized.spectrometerIp}:${normalized.spectrometerPort}`;
-    pushLog(`实时采集参数已确认: ${realtimeParameterSummary}。等待采集板 bridge 或串口协议接入。`);
+    pushLog(`操作者已确认实时采集参数: ${realtimeParameterSummary}。等待采集板 bridge 或串口协议接入。`);
     render();
   }
 
@@ -4925,7 +5385,7 @@ function initApp() {
     }
     fitTargetSelect.value = options.some((option) => option.value === selectedFitTargetValue) ? selectedFitTargetValue : "";
     fitTargetSelect.disabled = isRunning;
-    fitTargetSelect.title = options.length > 1 ? "选择稀土离子和谱线后重新运行" : "运行一次后可从匹配谱线中选择拟合目标";
+    fitTargetSelect.title = options.length > 1 ? "操作者选择拟合目标后仅重跑多峰拟合" : "运行一次后可从匹配谱线中选择拟合目标";
   }
 
   function setExportMenuOpen(open) {
@@ -5192,7 +5652,13 @@ function initApp() {
       appState.resultCsv ||
       ["element,detected,confidence", ...appState.rareEarthResults.map((row) => `${row.name},${row.detected ? 1 : 0},${row.confidence.toFixed(4)}`)].join("\n");
     downloadText("rareearth_detection_result.csv", csvText, "text/csv;charset=utf-8");
-    pushLog("检测结果 CSV 已导出。");
+    pushLog({
+      actor: "操作者",
+      stageTitle: "导出",
+      action: "导出 CSV",
+      evidence: "rareearth_detection_result.csv",
+      review: "导出前确认候选结论与复核点",
+    });
     render();
   }
 
@@ -5202,7 +5668,13 @@ function initApp() {
     }
     const filename = `${safeFileStem(appState.importedName)}_pipeline_result.json`;
     downloadText(filename, `${JSON.stringify(buildExportPayload(), null, 2)}\n`, "application/json;charset=utf-8");
-    pushLog("完整检测 JSON 已导出。");
+    pushLog({
+      actor: "操作者",
+      stageTitle: "导出",
+      action: "导出 JSON",
+      evidence: filename,
+      review: "JSON 保留完整前端 payload",
+    });
     render();
   }
 
@@ -5226,13 +5698,25 @@ function initApp() {
       ...PROCESS_STAGES.map((stage) => `- ${stage.title}: ${stageSummary(stage.id, appState)}`),
     ];
     downloadText(`${safeFileStem(appState.importedName)}_summary.txt`, `${lines.join("\n")}\n`, "text/plain;charset=utf-8");
-    pushLog("阶段摘要已导出。");
+    pushLog({
+      actor: "操作者",
+      stageTitle: "导出",
+      action: "导出阶段摘要",
+      evidence: `${safeFileStem(appState.importedName)}_summary.txt`,
+      review: "摘要用于复核阶段证据",
+    });
     render();
   }
 
   function exportHtmlReport() {
     if (!model.isComplete || isRunning) {
-      pushLog("检测未完成，无法导出 HTML 报告。");
+      pushLog({
+        actor: "工作站",
+        stageTitle: "导出",
+        action: "阻止 HTML 报告导出",
+        evidence: "检测未完成",
+        review: "等待流程完成后再导出",
+      });
       render();
       return;
     }
@@ -5246,7 +5730,13 @@ function initApp() {
     }
     const filename = `${safeFileStem(appState.importedName)}_detection_report.html`;
     downloadText(filename, buildHtmlReport(buildExportPayload(), { chartImageDataUrl }), "text/html;charset=utf-8");
-    pushLog(`检测报告 HTML 已导出: ${filename}。`);
+    pushLog({
+      actor: "操作者",
+      stageTitle: "导出",
+      action: "导出 HTML 报告",
+      evidence: filename,
+      review: "来源、参数和待复核证据",
+    });
     render();
   }
 
@@ -5364,7 +5854,7 @@ function initApp() {
     renderSampleSelect();
     renderSampleLibrary();
     renderFitTargetSelect();
-    runState.textContent = model.isComplete ? "完成" : isRunning ? activeStage.title : "就绪";
+    runState.textContent = model.isComplete ? "待复核" : isRunning ? activeStage.title : "就绪";
     toolbarState.dataset.state = model.isComplete ? "complete" : isRunning ? "running" : "ready";
     const startDisabledReason = sourceModeRunDisabledReason({ sourceMode: activeSourceMode, hasOfflineSource: hasOfflineSource(), isRunning });
     startButton.disabled = Boolean(startDisabledReason);
@@ -5379,13 +5869,13 @@ function initApp() {
     const exportDisabled = !model.isComplete || isRunning;
     if (exportMenuToggle) {
       exportMenuToggle.disabled = exportDisabled;
-      exportMenuToggle.title = exportDisabled ? "检测完成后可导出结果" : "选择导出格式";
+      exportMenuToggle.title = exportDisabled ? "检测完成并复核后可导出结果" : "选择导出格式";
     }
     exportActionButtons.forEach((button) => {
       button.disabled = exportDisabled;
     });
     if (reportButton) {
-      reportButton.title = reportButton.disabled ? "检测完成后可导出离线 HTML 报告" : "导出离线 HTML 检测报告";
+      reportButton.title = reportButton.disabled ? "检测完成并复核后可导出离线 HTML 报告" : "复核后导出离线 HTML 检测报告";
     }
     if (exportDisabled) {
       setExportMenuOpen(false);
@@ -5493,7 +5983,13 @@ function initApp() {
     if (!shouldUseFitOnlyRun({ jobId: appState.jobId, isRunning, selectedValue: selectedFitTargetValue })) {
       restoreCompletedModelToFitStage();
       appState.fileStatus = "拟合失败";
-      pushLog("缺少可复用的后端 job_id，请先完整运行一次样本。");
+      pushLog({
+        actor: "工作站",
+        stageId: "fit",
+        action: "阻止拟合重跑",
+        evidence: "缺少可复用的后端 job_id",
+        review: "请先完整运行一次样本",
+      });
       render();
       return;
     }
@@ -5502,9 +5998,12 @@ function initApp() {
     runToken = token;
     stopRun();
     markFitOnlyRunPending();
-    logs.splice(0, logs.length, {
-      time: logTime(),
-      text: `仅重跑多峰拟合: ${fitTargetLabel(parseFitTargetValue(selectedFitTargetValue))}。`,
+    replaceLogs({
+      actor: "操作者",
+      stageId: "fit",
+      action: "调整拟合目标",
+      evidence: fitTargetLabel(parseFitTargetValue(selectedFitTargetValue)),
+      review: "仅重跑多峰拟合，复核目标选择",
     });
     isRunning = true;
     render();
@@ -5517,7 +6016,10 @@ function initApp() {
         applyPipelineResult(appState, result);
         markFitOnlyRunComplete();
         isRunning = false;
-        logs.splice(0, logs.length, { time: logTime(), text: `多峰拟合已更新: ${fitTargetLabel(parseFitTargetValue(selectedFitTargetValue))}。` });
+        replaceLogs({
+          ...stageEvidenceLogEntry(PROCESS_STAGES[4], appState, "更新多峰拟合证据"),
+          evidence: `${fitTargetLabel(parseFitTargetValue(selectedFitTargetValue))} / ${stageExplanationField("fit", appState, "输出证据")}`,
+        });
         render();
       })
       .catch((error) => {
@@ -5527,7 +6029,13 @@ function initApp() {
         isRunning = false;
         restoreCompletedModelToFitStage();
         appState.fileStatus = "拟合失败";
-        pushLog(`多峰拟合重跑失败: ${error.message}。不会自动重跑完整流程。`);
+        pushLog({
+          actor: "系统",
+          stageId: "fit",
+          action: "拟合重跑失败",
+          evidence: error.message,
+          review: "复核拟合目标或重新运行完整流程",
+        });
         render();
       });
   }
@@ -5536,7 +6044,13 @@ function initApp() {
     const disabledReason = sourceModeRunDisabledReason({ sourceMode: activeSourceMode, hasOfflineSource: hasOfflineSource(), isRunning });
     if (disabledReason) {
       appState.fileStatus = activeSourceMode === "realtime" ? "实时采集待接入" : "请先打开光谱或文件夹";
-      pushLog(activeSourceMode === "realtime" ? `${disabledReason}，开始分析不可用。` : `${disabledReason}。`);
+      pushLog({
+        actor: "工作站",
+        stageTitle: activeSourceMode === "realtime" ? "实时采集" : "来源",
+        action: "阻止提交检测任务",
+        evidence: disabledReason,
+        review: activeSourceMode === "realtime" ? "采集板参数确认和光谱采集" : "打开光谱或文件夹",
+      });
       render();
       return;
     }
@@ -5549,9 +6063,12 @@ function initApp() {
     const selectedImport = findImportedFileByKey(importedFiles, selectedImportedKey);
     const selectedSample = findSampleByPath(sampleLibrary, selectedSampleLibraryPath);
     const runLabel = selectedImport ? selectedImport.label : selectedSample ? `示例 / ${selectedSample.label}` : selectedFile.name;
-    logs.splice(0, logs.length, {
-      time: logTime(),
-      text: `提交后端检测任务: ${runLabel}${selectedFitTargetValue ? ` / 目标 ${fitTargetLabel(parseFitTargetValue(selectedFitTargetValue))}` : ""}。`,
+    replaceLogs({
+      actor: "操作者",
+      stageTitle: "来源",
+      action: "提交检测任务",
+      evidence: `${runLabel}${selectedFitTargetValue ? ` / 拟合目标 ${fitTargetLabel(parseFitTargetValue(selectedFitTargetValue))}` : ""}`,
+      review: "来源与参数",
     });
     isRunning = true;
     render();
@@ -5565,7 +6082,13 @@ function initApp() {
         if (shouldSelectFitStage) {
           model.selectStage(4);
         }
-        logs.splice(0, logs.length, { time: logTime(), text: `后端返回 ${appState.importedName} 的检测结果。` });
+        replaceLogs({
+          actor: "系统",
+          stageId: "result",
+          action: "返回候选结论与证据链",
+          evidence: stageSummary("result", appState),
+          review: resultDecisionSummary(appState).reviewText,
+        });
         render();
         runCurrentStage();
       })
@@ -5575,7 +6098,13 @@ function initApp() {
         }
         isRunning = false;
         appState.fileStatus = "后端失败";
-        pushLog(`后端检测失败: ${error.message}`);
+        pushLog({
+          actor: "系统",
+          stageTitle: "来源",
+          action: "检测失败",
+          evidence: error.message,
+          review: "来源和参数",
+        });
         render();
       });
   }
@@ -5585,7 +6114,7 @@ function initApp() {
     stopRun();
     isRunning = false;
     model.reset();
-    pushLog("检测流程已停止并复位。");
+    pushLog("检测流程已停止并复位，等待操作者重新确认。");
     render();
   }
 
@@ -5604,14 +6133,21 @@ function initApp() {
     if (model.isComplete) {
       stopRun();
       isRunning = false;
-      pushLog("检测流程完成。");
+      const decision = resultDecisionSummary(appState);
+      pushLog({
+        actor: "系统",
+        stageId: "result",
+        action: "完成流程",
+        evidence: decision.conclusion,
+        review: decision.reviewText,
+      });
       render();
       return;
     }
 
     const stage = model.stages[model.activeIndex];
     model.selectStage(model.activeIndex);
-    pushLog(`开始阶段 ${model.activeIndex + 1}: ${stage.title}`);
+    pushLog(stageEvidenceLogEntry(stage, appState, "开始处理"));
     const startedAt = performance.now();
 
     function tick(now) {
@@ -5625,7 +6161,10 @@ function initApp() {
       timer = window.setTimeout(() => {
         const summary = stageSummary(stage.id, appState);
         model.completeCurrentStage(summary);
-        pushLog(`${stage.title}完成，${summary}。`);
+        pushLog({
+          ...stageEvidenceLogEntry(stage, appState, "完成阶段"),
+          evidence: `${summary} / ${stageExplanationField(stage.id, appState, "输出证据")}`,
+        });
         if (model.isComplete) {
           isRunning = false;
         }
@@ -5655,20 +6194,20 @@ function initApp() {
         appState.peaks = findDemoPeaks(appState.spectrum);
         appState.fileStatus = "已本地预览";
         appState.pointCount = parsed.length;
-        pushLog(`${logPrefix}: ${importedFile.label}，开始后将提交后端。`);
+        pushLog(`${logPrefix}: ${importedFile.label}，开始后由系统提交后端解析。`);
       } else {
         importedFile.previewStatus = "invalid_spectrum";
         importedFile.previewError = "未找到至少 8 行波长-强度数据";
         appState.spectrum = [];
         appState.peaks = [];
         appState.fileStatus = "不是光谱数据";
-        pushLog(`${logPrefix}: ${importedFile.label} 不是原始光谱，请选择至少 8 行波长-强度数据。`);
+        pushLog(`${logPrefix}: ${importedFile.label} 未识别为原始光谱，请选择至少 8 行波长-强度数据。`);
       }
     } catch (error) {
       importedFile.previewStatus = "read_error";
       importedFile.previewError = error && error.message ? error.message : "读取失败";
       appState.fileStatus = "本地读取失败";
-      pushLog(`${logPrefix}: ${importedFile.label} 本地读取失败，未提交后端。`);
+      pushLog(`${logPrefix}: ${importedFile.label} 本地读取失败，未提交后端。请复核文件来源。`);
     }
   }
 
@@ -5730,7 +6269,7 @@ function initApp() {
     appState.pointCount = 0;
     appState.resultCsv = "";
     appState.jobId = null;
-    pushLog(`${logPrefix}: ${sample.label}，开始后将从后端样本库运行。`);
+    pushLog(`${logPrefix}: ${sample.label}，开始后将从后端样本库运行并生成系统证据。`);
     render();
   }
 
@@ -5774,8 +6313,8 @@ function initApp() {
       activeSourceMode = nextMode;
       pushLog(
         nextMode === "realtime"
-          ? "切换到实时采集；请先确认采集板和光谱仪参数，获得光谱数据后才能分析。"
-          : "切换到离线分析；可导入光谱文件、文件夹或加载示例样本库。",
+          ? "切换到实时采集；操作者确认采集板和光谱仪参数，获得光谱数据后再分析。"
+          : "切换到离线分析；操作者可导入光谱文件、文件夹或加载示例样本库。",
       );
       render();
       if (nextMode === "realtime") {
@@ -5794,7 +6333,7 @@ function initApp() {
   stepCells.forEach((cell, index) => {
     cell.addEventListener("click", () => {
       model.selectStage(index);
-      pushLog(`切换到阶段: ${model.stages[index].title}。`);
+      pushLog(`查看系统证据阶段: ${model.stages[index].title}。`);
       render();
     });
   });
@@ -5807,7 +6346,7 @@ function initApp() {
         appState.matchZoom = createDefaultMatchZoom();
       }
       appState.chartCursor = null;
-      pushLog(`${model.stages[model.selectedIndex].title}视图已复位。`);
+      pushLog(`${model.stages[model.selectedIndex].title}证据视图已复位。`);
       render();
     });
   }
@@ -5915,7 +6454,7 @@ function initApp() {
     fitTargetSelect.addEventListener("change", (event) => {
       selectedFitTargetValue = event.target.value || "";
       const target = parseFitTargetValue(selectedFitTargetValue);
-      pushLog(target ? `已选择拟合目标: ${fitTargetLabel(target)}。` : "拟合目标已切回自动。");
+      pushLog(target ? `操作者已选择拟合目标: ${fitTargetLabel(target)}。` : "拟合目标已切回自动。");
       const options = buildFitTargetOptions(appState, selectedFitTargetValue);
       if (shouldAutoRunAfterFitTargetChange({ isRunning, hasFitOptions: options.length > 1, selectedValue: selectedFitTargetValue })) {
         startFitOnlyPipeline();
@@ -5928,7 +6467,7 @@ function initApp() {
   if (confidenceIonSelect) {
     confidenceIonSelect.addEventListener("change", (event) => {
       const selectedItem = syncSelectedConfidenceIon(appState.confidenceCalculation, event.target.value || "");
-      pushLog(selectedItem ? `已切换置信度计算粒子: ${selectedItem.ion} / ${selectedItem.element || "未知"}。` : "置信度计算暂无可选粒子。");
+      pushLog(selectedItem ? `已切换置信度证据粒子: ${selectedItem.ion} / ${selectedItem.element || "未知"}。` : "置信度计算暂无可选粒子。");
       render();
     });
   }
@@ -6027,6 +6566,10 @@ function runSelfTests() {
   assert(Array.isArray(PROCESS_STAGES), "PROCESS_STAGES should exist");
   assert(PROCESS_STAGES.length === 7, "pipeline should contain exactly seven stages");
   assert(
+    PROCESS_STAGES.map((stage) => stage.id).join("|") === "raw|peak|match|temperature|fit|confidence|result",
+    "pipeline stage ids should remain stable",
+  );
+  assert(
     PROCESS_STAGES.map((stage) => stage.title).join("|") === "原始光谱|寻峰结果|谱线匹配|温度迭代|多峰拟合|置信度计算|检测结果",
     "pipeline should place confidence calculation between fit and result",
   );
@@ -6041,6 +6584,52 @@ function runSelfTests() {
     assert(Array.isArray(parameterRows(stage, appState)), `${stage.id} should expose parameter rows`);
     assert(Array.isArray(resultRows(stage, appState)), `${stage.id} should expose result rows`);
   });
+  const explanationLabels = "输入|系统处理|输出证据|复核风险";
+  PROCESS_STAGES.forEach((stage) => {
+    const rows = stageRows(stage.id, appState);
+    assert(
+      rows.slice(0, 4).map((row) => row[0]).join("|") === explanationLabels,
+      `${stage.id} stage table should lead with input/process/output/risk explanation rows`,
+    );
+    assert(
+      rows.slice(0, 4).every((row) => row.length === 3 && row.every((cell) => String(cell).trim())),
+      `${stage.id} stage explanation rows should keep the three-column table populated`,
+    );
+  });
+  const detailRowsAfterExplanation = (stageId) => stageRows(stageId, appState).slice(4);
+  assert(detailRowsAfterExplanation("raw").some((row) => row[0] === "采样点"), "raw detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("peak").some((row) => String(row[0]).startsWith("候选峰")), "peak detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("match").some((row) => row[1] === "稀土匹配"), "match detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("temperature").some((row) => String(row[0]).includes("起点")), "temperature detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("fit").some((row) => String(row[0]).startsWith("拟合分量")), "fit detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("confidence").some((row) => row[0] === "原始置信度"), "confidence detail rows should remain after explanation rows");
+  assert(detailRowsAfterExplanation("result").some((row) => row[0] === "候选结论"), "result detail rows should remain after explanation rows");
+  assert(typeof normalizeEvidenceLogEntry === "function", "evidence logs should expose a normalizer");
+  assert(typeof evidenceLogText === "function", "evidence logs should expose a readable text formatter");
+  assert(typeof stageEvidenceLogEntry === "function", "stage evidence logs should reuse stage explanation rows");
+  const legacyEvidenceLog = normalizeEvidenceLogEntry("普通文本日志", "10:00:00");
+  assert(legacyEvidenceLog.time === "10:00:00" && legacyEvidenceLog.text.includes("普通文本日志"), "string logs should remain compatible");
+  const structuredEvidenceLog = normalizeEvidenceLogEntry({
+    time: "10:00:01",
+    actor: "系统",
+    stageId: "match",
+    action: "完成阶段",
+    evidence: "稀土匹配 3",
+    review: "基体重叠",
+  });
+  assert(
+    ["time", "actor", "stageId", "stageTitle", "action", "evidence", "review"].every((key) => Object.prototype.hasOwnProperty.call(structuredEvidenceLog, key)),
+    "structured evidence logs should keep traceable fields",
+  );
+  const stageLog = stageEvidenceLogEntry(PROCESS_STAGES[2], appState, "完成阶段", "10:00:02");
+  const matchExplanationRows = stageExplanationRows("match", appState);
+  assert(stageLog.evidence.includes(matchExplanationRows.find((row) => row[0] === "输出证据")[1]), "stage completion logs should reuse output evidence from stage explanations");
+  assert(stageLog.review.includes(matchExplanationRows.find((row) => row[0] === "复核风险")[1]), "stage completion logs should reuse review risk from stage explanations");
+  const stageLogText = evidenceLogText(stageLog);
+  assert(
+    stageLogText.includes("谱线匹配") && stageLogText.includes("完成阶段") && stageLogText.includes("证据") && stageLogText.includes("复核"),
+    "rendered evidence log text should include stage, action, evidence, and review",
+  );
   assert(appState.spectralMatches.some((line) => line.status === "blocked"), "matching stage should expose filtered conflict lines");
   assert(spectralLineStyle({ status: "enabled" }).label === "稀土匹配", "enabled spectral lines should be shown as rare-earth matches");
   assert(spectralLineStyle({ status: "blocked" }).label === "基体重叠", "blocked spectral lines should be shown as matrix overlaps");
@@ -6487,7 +7076,51 @@ function runSelfTests() {
   assert(normalized.confidenceCalculation.items.length === 1, "backend confidence calculation items should be normalized");
   assert(normalized.confidenceCalculation.selectedItem.ion === "YbII", "confidence view should default to the highest matched item");
   assert(normalized.confidenceCalculation.selectedItem.matchedTheoreticalComb.length === normalized.confidenceCalculation.selectedItem.matchedExperimentalComb.length, "matched comb arrays should stay paired");
-  assert(stageRows("confidence", normalized).some((row) => row[0] === "置信度"), "confidence stage table should expose confidence calculation breakdown");
+  assert(stageRows("confidence", normalized).some((row) => row[0] === "原始置信度"), "confidence stage table should expose confidence calculation breakdown");
+  const confidenceStageRows = stageRows("confidence", normalized);
+  assert(
+    confidenceStageRows.slice(0, 4).map((row) => row[0]).join("|") === explanationLabels,
+    "confidence stage should include input/process/output/risk before trust evidence details",
+  );
+  const confidenceDetailRows = confidenceStageRows.slice(4);
+  const confidenceStageLabels = confidenceDetailRows.slice(0, 7).map((row) => row[0]).join("|");
+  assert(
+    confidenceStageLabels === "粒子 / 元素|原始置信度|证据强弱|复核原因|距离 / R2 / 温度|匹配谱线|代表选择",
+    "confidence stage table should lead with trust evidence fields in review order",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[1]).includes("0.0779")),
+    "confidence stage table should preserve the raw confidence value",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[0]).includes("证据强弱") && String(row[1]).includes("证据不足")),
+    "confidence stage table should expose the frontend review band",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[0]).includes("复核原因") && String(row[1]).includes("置信度低")),
+    "confidence stage table should expose review reasons from existing confidence evidence",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[0]).includes("距离") && String(row[1]).includes("0.4341") && String(row[1]).includes("0.7655") && String(row[1]).includes("15427.11")),
+    "confidence stage table should expose distance, R2, and temperature support values",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[0]).includes("匹配谱线") && String(row[1]).includes("1/2")),
+    "confidence stage table should expose matched/all line counts",
+  );
+  assert(
+    confidenceDetailRows.some((row) => String(row[0]).includes("代表选择") && String(row[1]).includes("T 门内")),
+    "confidence stage table should expose representative selection reason",
+  );
+  const confidenceInspectorRows = resultRows(PROCESS_STAGES[5], normalized);
+  assert(
+    confidenceInspectorRows.slice(0, 4).map((row) => row[0]).join("|") === "证据强弱|复核原因|原始置信度|支撑数值",
+    "confidence inspector should lead with review band, review reasons, raw confidence, and supporting values",
+  );
+  assert(
+    confidenceInspectorRows.some((row) => String(row[0]).includes("支撑数值") && String(row[1]).includes("distance") && String(row[1]).includes("T gate") && String(row[1]).includes("R2")),
+    "confidence inspector should keep distance, T gate, and R2 visible",
+  );
   assert(!stageRows("match", normalized).some((row) => row[0] === "置信度"), "match stage should keep confidence rows in the dedicated stage");
   const emptyConfidenceNormalized = normalizeBackendResult({ stages: [], result_csv: "" });
   assert(emptyConfidenceNormalized.confidenceCalculation.items.length === 0, "empty confidence payload should normalize to an empty item list");
@@ -6507,6 +7140,45 @@ function runSelfTests() {
   assert(normalized.fitConfidenceRescue && normalized.fitConfidenceRescue.reason === "fitted_peak_append_recompute", "fit confidence rescue should come from backend payload");
   assert(normalized.fitConfidenceRescue.recomputedConfidence === 0.2703, "fit confidence rescue should preserve backend recomputed confidence");
   assert(normalized.rareEarthResults[0].name === "Yb", "backend result element should map to display name");
+  const rareEarthFixtureNames = ["La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy", "Ho", "Er", "Tm", "Yb", "Lu", "Y"];
+  const decisionResultState = {
+    ...normalized,
+    rareEarthResults: rareEarthFixtureNames.map((name) => ({
+      name,
+      detected: name === "Yb",
+      confidence: name === "Yb" ? 0.2703 : 0.01,
+      matched: name === "Yb" ? 1 : 0,
+    })),
+  };
+  const decisionStageRows = stageRows("result", decisionResultState);
+  assert(
+    decisionStageRows.slice(0, 4).map((row) => row[0]).join("|") === explanationLabels,
+    "result stage table should lead with input/process/output/risk explanation rows",
+  );
+  const decisionDetailRows = decisionStageRows.slice(4);
+  assert(
+    decisionDetailRows.slice(0, 4).map((row) => row[0]).join("|") === "候选结论|证据强弱|复核点|导出确认",
+    "result stage table should keep decision summary rows after the explanation rows",
+  );
+  assert(
+    decisionDetailRows.filter((row) => String(row[0]).startsWith("稀土明细 ")).length === 15,
+    "result stage table should keep all 15 rare-earth detail rows after the summary",
+  );
+  assert(
+    decisionDetailRows.find((row) => row[0] === "稀土明细 Yb") && decisionDetailRows.find((row) => row[0] === "稀土明细 Yb")[1].includes("0.2703"),
+    "result stage detail rows should preserve original confidence values",
+  );
+  const decisionInspectorRows = resultRows(PROCESS_STAGES[6], decisionResultState);
+  assert(
+    decisionInspectorRows.slice(0, 4).map((row) => row[0]).join("|") === "候选结论|证据强弱|复核点|导出确认",
+    "result inspector should lead with decision summary fields",
+  );
+  assert(decisionInspectorRows.find((row) => row[0] === "复核点")[1].includes("多峰拟合补救"), "result review reasons should surface backend-provided fit rescue");
+  const noRescueDecisionRows = resultRows(PROCESS_STAGES[6], { ...decisionResultState, fitConfidenceRescue: null });
+  assert(!noRescueDecisionRows.find((row) => row[0] === "复核点")[1].includes("多峰拟合补救"), "fit rescue review reason should not be inferred from before/after confidence");
+  assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.7, matched: 3 }] })[1][1] === "证据较强", "review band should mark confidence >= 0.70 as strong evidence");
+  assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.3, matched: 2 }] })[1][1] === "待复核", "review band should mark confidence >= 0.30 as review");
+  assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.299, matched: 1 }] })[1][1] === "证据不足", "review band should mark confidence < 0.30 as weak evidence");
   const fitTargetOptions = buildFitTargetOptions(normalized, "");
   assert(fitTargetOptions[0].value === "", "fit target selector should offer automatic mode first");
   assert(fitTargetOptions.some((option) => option.target && option.target.ion === "YbII" && option.target.wavelength === 274.895), "fit target selector should expose matched rare-earth lines");
@@ -6580,8 +7252,8 @@ function runSelfTests() {
   assert(fitCanvasTexts.every((text) => text !== "Gaussian Components"), "fit legend should not expose English component label");
   assert(fitCanvasTexts.some((text) => text === "273.995"), "fit chart should draw numeric x-axis tick labels");
   assert(fitCanvasTexts.some((text) => text === "0.034" || text === "0.0340"), "fit chart should draw numeric y-axis tick labels");
-  const fitTableRows = stageRows("fit", normalized);
-  assert(fitTableRows[0][0].startsWith("拟合候选"), "fit table should lead with selected fit candidates");
+  const fitTableRows = stageRows("fit", normalized).slice(4);
+  assert(fitTableRows[0][0].startsWith("拟合候选"), "fit table should keep selected fit candidates after explanation rows");
   assert(fitTableRows[1][2].includes("matrix"), "fit table should show candidate source for matrix lines");
   assert(fitTableRows.some((row) => row[0].startsWith("局部极值")), "fit table should still include local extrema rows");
 
@@ -6741,6 +7413,13 @@ function runSelfTests() {
   assert(!reportHtml.includes("<script"), "HTML report should be static and not depend on runtime JavaScript");
   assert(indexHtml.includes('data-source-mode="offline"'), "UI should expose an offline analysis source mode");
   assert(indexHtml.includes('data-source-mode="realtime"'), "UI should expose a real-time acquisition source mode");
+  assert(indexHtml.includes("操作者确认"), "HCI copy should explicitly mark operator confirmation areas");
+  assert(indexHtml.includes("系统证据"), "HCI copy should label generated evidence without overstating automation");
+  assert(indexHtml.includes("待复核"), "HCI copy should mark review points before report export");
+  assert(PROCESS_STAGES.some((stage) => stage.detail.includes("算法")), "stage subtitles should describe algorithm work while keeping stable stage names");
+  const aiTerm = ["A", "I"].join("");
+  const genericIntelligenceTerm = ["人工", "智能"].join("");
+  assert(!(indexHtml + appJs).includes(aiTerm) && !(indexHtml + appJs).includes(genericIntelligenceTerm), "HCI copy should not present the current LIBS workstation as a generic intelligent system");
   assert(indexHtml.includes('data-source-panel="realtime"'), "UI should expose a dedicated real-time acquisition panel");
   assert(indexHtml.includes("采集板串口"), "real-time acquisition panel should focus on acquisition-board serial selection");
   assert((indexHtml.match(/class="realtime-block"/g) || []).length === 1, "real-time acquisition panel should stay compact and use a single block");
