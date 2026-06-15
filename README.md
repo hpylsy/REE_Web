@@ -41,7 +41,7 @@ Web 工作站包含七个主阶段：
 
 ### 方式 A：Windows 一键启动
 
-Windows 用户可以直接运行：
+Windows 用户进入项目根目录后，可以直接运行：
 
 ```powershell
 .\deploy_windows.ps1
@@ -76,10 +76,10 @@ Windows 用户可以直接运行：
 
 ### 方式 B：Linux / macOS 手动启动
 
-进入项目根目录：
+进入项目根目录，例如：
 
 ```bash
-cd /home/hpy/RREdetectation-MultiPeakFit
+cd RREdetectation-MultiPeakFit
 ```
 
 建议创建虚拟环境：
@@ -246,8 +246,8 @@ sha256sum /tmp/rre-public-app.js
 
 更完整的部署和排错步骤见：
 
-- `DEPLOYMENT_HANDOFF.md`
-- `WEB_APP_DEVELOPMENT_RUNBOOK.md`
+- `docs/DEPLOYMENT_HANDOFF.md`
+- `docs/WEB_APP_DEVELOPMENT_RUNBOOK.md`
 
 ## 开发约束
 
@@ -269,12 +269,27 @@ web_app/styles.css
 
 ## 相关文档
 
-- `BACKEND_API_CONTRACT.md`：前后端接口和 payload 契约。
-- `HCI_INTERACTION_ROADMAP.md`：Web HCI 改造路线。
-- `UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`：页面工作流和实时采集架构。
-- `DEPLOYMENT_HANDOFF.md`：公网部署记录。
-- `WEB_APP_DEVELOPMENT_RUNBOOK.md`：Web 开发、验证、排错和部署例程。
-- `progress.md`：历史开发记录和验证证据。
+- `docs/BACKEND_API_CONTRACT.md`：前后端接口和 payload 契约。
+- `docs/DEPLOYMENT_HANDOFF.md`：公网部署记录。
+- `docs/WEB_APP_DEVELOPMENT_RUNBOOK.md`：Web 开发、验证、排错和部署例程。
+- `docs/internal/HCI_INTERACTION_ROADMAP.md`：Web HCI 改造路线。
+- `docs/internal/UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`：页面工作流和实时采集架构。
+- `docs/internal/ALGORITHM_PARITY_REPORT.md`：原算法与 Web 后端服务化实现的差异审计。
+
+## 项目结构
+
+```text
+backend/                    Flask API 和服务化算法实现
+web_app/                    Web 工作站前端
+RandomSpectrum_av2/Pt2/     Windows 一键部署随仓库携带的示例样本库
+RREs/                       合同探针使用的最小真实样本
+docs/                       接口契约、部署和开发例程文档
+docs/internal/              HCI 路线、交接记录和算法审计材料
+research/legacy_algorithms/ 原始研究脚本和旧算法参考代码
+deploy_windows.ps1          Windows 本地一键启动脚本
+```
+
+`research/legacy_algorithms/` 中的脚本保留原始研究代码形态，包含 Windows 路径、顶层执行或绘图副作用，当前 Web 后端不会直接 import 这些文件。Windows 部署运行的是 `backend/` 和 `web_app/`，不要为了启动 Web 去改这些旧脚本的路径。
 
 ## 历史遗留问题
 

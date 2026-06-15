@@ -2,11 +2,9 @@
 
 本文档给后续接手 `web_app` 的开发窗口使用。它不是产品说明书，而是开发、验证、排错和服务器同步的操作例程。
 
-当前项目目录：
+以下命令默认在项目根目录运行。Windows 用户优先使用根目录的 `deploy_windows.ps1`，Linux/macOS 用户进入自己克隆出来的项目目录即可。
 
-```bash
-/home/hpy/RREdetectation-MultiPeakFit
-```
+历史开发机使用过 Linux 绝对路径；接手人不要把个人机器路径写死到部署脚本或运行配置里。
 
 ## 1. 接手前先读
 
@@ -15,11 +13,11 @@
 1. `web_app/app.js`
 2. `web_app/index.html`
 3. `web_app/styles.css`
-4. `BACKEND_API_CONTRACT.md`
-5. `HCI_INTERACTION_ROADMAP.md`
-6. `UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`
-7. `DEPLOYMENT_HANDOFF.md`
-8. `progress.md` 尾部最近 150-250 行
+4. `docs/BACKEND_API_CONTRACT.md`
+5. `docs/internal/HCI_INTERACTION_ROADMAP.md`
+6. `docs/internal/UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`
+7. `docs/DEPLOYMENT_HANDOFF.md`
+8. `docs/internal/progress.md` 尾部最近 150-250 行，如果本地保留了该文件
 
 开发判断以真实代码、运行结果、contract probe 和浏览器截图为准。旧 handoff 只能当历史背景，不能替代当前代码状态。
 
@@ -53,7 +51,6 @@ web_app/styles.css
 推荐本地 HTTP 方式：
 
 ```bash
-cd /home/hpy/RREdetectation-MultiPeakFit
 python3 backend/app.py
 ```
 
@@ -512,7 +509,7 @@ pwd
 ls backend/contract_probe.py
 ```
 
-必须在 `/home/hpy/RREdetectation-MultiPeakFit` 根目录跑：
+必须在项目根目录跑：
 
 ```bash
 python3 -m backend.contract_probe RREs/070101_95.csv
@@ -583,12 +580,12 @@ pwd
 
 ## 19. 关键资料索引
 
-- `BACKEND_API_CONTRACT.md`：前后端 payload 契约。
-- `HCI_INTERACTION_ROADMAP.md`：HCI 改造顺序和边界。
-- `UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`：页面工作流和实时采集架构。
-- `DEPLOYMENT_HANDOFF.md`：公网部署记录。
-- `HANDOFF_NEXT_WINDOW.md`：历史接手提示和启动方式。
-- `COORDINATOR_HANDOFF.md`：多窗口统筹和派发模板。
-- `progress.md`：历史操作日志和验证证据。
+- `docs/BACKEND_API_CONTRACT.md`：前后端 payload 契约。
+- `docs/DEPLOYMENT_HANDOFF.md`：公网部署记录。
+- `docs/internal/HCI_INTERACTION_ROADMAP.md`：HCI 改造顺序和边界。
+- `docs/internal/UI_WORKFLOW_ARCHITECTURE_HANDOFF.md`：页面工作流和实时采集架构。
+- `docs/internal/HANDOFF_NEXT_WINDOW.md`：历史接手提示和启动方式。
+- `docs/internal/COORDINATOR_HANDOFF.md`：多窗口统筹和派发模板。
+- `docs/internal/progress.md`：历史操作日志和验证证据，默认不提交。
 
 如果这些文档和当前代码冲突，以当前代码、contract probe、浏览器截图为准。

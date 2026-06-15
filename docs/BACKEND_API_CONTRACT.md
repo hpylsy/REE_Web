@@ -9,9 +9,9 @@ being converted into Ubuntu-safe, side-effect-free backend logic.
 
 The Flask route layer must not directly import these research scripts:
 
-- `Elements_detectation.py`
-- `Wavelet_peakfinding.py`
-- `Identification_Matrix.py`
+- `research/legacy_algorithms/Elements_detectation.py`
+- `research/legacy_algorithms/Wavelet_peakfinding.py`
+- `research/legacy_algorithms/Identification_Matrix.py`
 - `MultiPeakfit/Gaussfit.py`
 
 They can be used as algorithm references only. Backend payloads should come from
