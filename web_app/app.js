@@ -4250,7 +4250,7 @@ function drawResult(canvas, appState) {
   const cardX = pad.left;
   const cardY = pad.top;
   const cardWidth = width - pad.left - pad.right;
-  const cardHeight = compact ? 124 : 116;
+  const cardHeight = compact ? 94 : 86;
 
   ctx.fillStyle = "#f7f9fb";
   ctx.strokeStyle = "#cbd3dc";
@@ -4262,32 +4262,29 @@ function drawResult(canvas, appState) {
 
   ctx.fillStyle = "#66717d";
   ctx.font = "11px system-ui, sans-serif";
-  ctx.fillText("候选结论", cardX + 12, cardY + 22);
+  ctx.fillText("候选结论", cardX + 12, cardY + 18);
   ctx.fillStyle = "#17212b";
   ctx.font = compact ? "18px system-ui, sans-serif" : "22px system-ui, sans-serif";
-  ctx.fillText(truncateCanvasText(ctx, summary.conclusion, cardWidth - 24), cardX + 12, cardY + (compact ? 48 : 52));
+  ctx.fillText(truncateCanvasText(ctx, summary.conclusion, cardWidth - 24), cardX + 12, cardY + (compact ? 43 : 45));
 
   const bandColor = summary.band === "证据较强" ? "#246b57" : summary.band === "待复核" ? "#875f25" : "#88414b";
   const bandX = cardX + 12;
-  const bandY = cardY + (compact ? 66 : 72);
+  const bandY = cardY + (compact ? 66 : 67);
+  const evidenceLine = `${summary.band} · 主置信度 ${summary.primaryConfidenceText} · 复核点 ${summary.reviewText}`;
   ctx.fillStyle = bandColor;
-  ctx.font = "13px system-ui, sans-serif";
-  ctx.fillText(`证据强弱: ${summary.band}`, bandX, bandY);
-  ctx.fillStyle = "#4d5965";
   ctx.font = "12px system-ui, sans-serif";
-  ctx.fillText(`主置信度 ${summary.primaryConfidenceText}`, bandX, bandY + 22);
-  ctx.fillText(
-    truncateCanvasText(ctx, `复核点: ${summary.reviewText}`, cardWidth - 24),
-    bandX,
-    bandY + 42,
-  );
+  ctx.fillText(truncateCanvasText(ctx, evidenceLine, cardWidth - 24), bandX, bandY);
 
-  const plotTop = Math.min(height - 86, cardY + cardHeight + 34);
+  const chartHeaderTop = Math.min(height - 116, cardY + cardHeight + 16);
+  const plotTop = Math.min(height - 78, chartHeaderTop + 42);
   const plotBottom = height - pad.bottom;
   const plotHeight = Math.max(54, plotBottom - plotTop);
   ctx.fillStyle = "#27323e";
   ctx.font = "12px system-ui, sans-serif";
-  ctx.fillText("稀土结果明细", pad.left, plotTop - 12);
+  ctx.fillText("稀土结果明细", pad.left, chartHeaderTop + 12);
+  ctx.fillStyle = "#27323e";
+  ctx.font = "12px system-ui, sans-serif";
+  ctx.fillText(`检测阈值 ${appState.detectionThreshold.toFixed(2)} · 导出前确认`, pad.left + 4, chartHeaderTop + 32);
   ctx.strokeStyle = "#c2c8cf";
   ctx.beginPath();
   ctx.moveTo(pad.left, plotTop);
@@ -4310,13 +4307,10 @@ function drawResult(canvas, appState) {
     ctx.textAlign = "center";
     ctx.fillText(row.name, x + barWidth / 2, height - 12);
     if (barWidth >= 10 || row.detected) {
-      ctx.fillText(normalizeNumber(row.confidence).toFixed(2), x + barWidth / 2, Math.max(plotTop + 12, y - 6));
+      ctx.fillText(normalizeNumber(row.confidence).toFixed(2), x + barWidth / 2, Math.max(plotTop + 14, y - 6));
     }
   });
   ctx.textAlign = "left";
-  ctx.fillStyle = "#27323e";
-  ctx.font = "12px system-ui, sans-serif";
-  ctx.fillText(`检测阈值 ${appState.detectionThreshold.toFixed(2)} · 导出前确认`, pad.left + 4, plotTop + 14);
 }
 
 const chartRenderers = {
@@ -7221,6 +7215,60 @@ function runSelfTests() {
   assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.7, matched: 3 }] })[1][1] === "证据较强", "review band should mark confidence >= 0.70 as strong evidence");
   assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.3, matched: 2 }] })[1][1] === "待复核", "review band should mark confidence >= 0.30 as review");
   assert(resultRows(PROCESS_STAGES[6], { ...decisionResultState, rareEarthResults: [{ name: "Yb", detected: true, confidence: 0.299, matched: 1 }] })[1][1] === "证据不足", "review band should mark confidence < 0.30 as weak evidence");
+  const resultCanvasTexts = [];
+  const resultCanvas = {
+    width: 960,
+    height: 520,
+    style: {},
+    dataset: {},
+    parentElement: null,
+    getBoundingClientRect: () => ({ width: 960, height: 520 }),
+    getContext: () => ({
+      setTransform() {},
+      clearRect() {},
+      fillRect() {},
+      strokeRect() {},
+      beginPath() {},
+      moveTo() {},
+      lineTo() {},
+      stroke() {},
+      fill() {},
+      arc() {},
+      rect() {},
+      clip() {},
+      save() {},
+      restore() {},
+      setLineDash() {},
+      measureText: (text) => ({ width: String(text).length * 7 }),
+      fillText: (text, x, y) => resultCanvasTexts.push({ text: String(text), x, y }),
+    }),
+  };
+  const previousResultWindow = globalThis.window;
+  globalThis.window = { devicePixelRatio: 1 };
+  drawResult(resultCanvas, {
+    ...decisionResultState,
+    rareEarthResults: ["Y", "Eu", "Lu", "Er", "Ho", "Yb", "La", "Tm", "Tb", "Sm"].map((name) => ({
+      name,
+      detected: ["Y", "Eu", "Lu", "Yb", "Tm"].includes(name),
+      confidence: { Y: 0.99, Eu: 0.9862, Lu: 0.9833, Yb: 0.5877, Tm: 0.9574 }[name] || 0,
+      matched: ["Y", "Eu", "Lu", "Yb", "Tm"].includes(name) ? 1 : 0,
+    })),
+  });
+  if (previousResultWindow === undefined) {
+    delete globalThis.window;
+  } else {
+    globalThis.window = previousResultWindow;
+  }
+  const resultHeaderY = resultCanvasTexts.find((item) => item.text === "稀土结果明细").y;
+  const resultThresholdY = resultCanvasTexts.find((item) => item.text.includes("检测阈值")).y;
+  const highConfidenceLabel = resultCanvasTexts.find((item) => item.text === "0.99");
+  const mergedResultEvidenceLine = resultCanvasTexts.find((item) => item.text.includes("证据较强") && item.text.includes("主置信度") && item.text.includes("复核点"));
+  const separateResultEvidenceLines = resultCanvasTexts.filter((item) => item.text.startsWith("证据强弱:") || item.text.startsWith("主置信度 ") || item.text.startsWith("复核点:"));
+  const resultConclusionLabel = resultCanvasTexts.find((item) => item.text === "候选结论");
+  assert(highConfidenceLabel && highConfidenceLabel.y > resultThresholdY + 8, "result chart confidence labels should not overlap the header and threshold text");
+  assert(mergedResultEvidenceLine, "result summary card should merge evidence band, primary confidence, and review point into one compact line");
+  assert(separateResultEvidenceLines.length === 0, "result summary card should not spend three rows on evidence status");
+  assert(resultHeaderY - resultConclusionLabel.y < 112, "result summary card should be compact enough to reduce blank vertical space");
   const fitTargetOptions = buildFitTargetOptions(normalized, "");
   assert(fitTargetOptions[0].value === "", "fit target selector should offer automatic mode first");
   assert(fitTargetOptions.some((option) => option.target && option.target.ion === "YbII" && option.target.wavelength === 274.895), "fit target selector should expose matched rare-earth lines");
