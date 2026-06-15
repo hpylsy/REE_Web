@@ -223,6 +223,10 @@ __marimo__/
 /passed/
 /RandomSpectrum/
 /RandomSpectrum_av2/
+!/RandomSpectrum_av2/
+/RandomSpectrum_av2/*
+!/RandomSpectrum_av2/Pt2/
+!/RandomSpectrum_av2/Pt2/*.csv
 /RockbaseSpectral/
 /GBW/*
 !/GBW/GBW07106.csv
